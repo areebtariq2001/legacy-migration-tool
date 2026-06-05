@@ -11,7 +11,7 @@ function App() {
     setLoading(true);
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('https://backlight-upstairs-chili.ngrok-free.dev/' + mode, {
+    const res = await fetch('https://legacy-migration-tool.onrender.com/' + mode, {
       method: 'POST',
       body: formData,
     });
@@ -24,7 +24,7 @@ function App() {
     if (!file) return alert('Please select a file first!');
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('https://backlight-upstairs-chili.ngrok-free.dev/download', {
+    const res = await fetch('https://legacy-migration-tool.onrender.com/download', {
       method: 'POST',
       body: formData,
     });
