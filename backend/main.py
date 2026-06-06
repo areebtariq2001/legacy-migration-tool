@@ -96,6 +96,74 @@ async def download(file: UploadFile = File(...)):
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
+
+def migrate_php(source: str):
+    changes = []
+    migrated = source
+
+    if 'mysql_connect' in migrated:
+        migrated = migrated.replace('mysql_connect', 'mysqli_connect')
+        changes.append("mysql_connect -> mysqli_connect")
+    if 'mysql_query' in migrated:
+        migrated = migrated.replace('mysql_query', 'mysqli_query')
+        changes.append("mysql_query -> mysqli_query")
+    if 'mysql_fetch_array' in migrated:
+        migrated = migrated.replace('mysql_fetch_array', 'mysqli_fetch_array')
+        changes.append("mysql_fetch_array -> mysqli_fetch_array")
+
+    if 'ereg(' in migrated:
+        migrated = migrated.replace('ereg(', 'preg_match(')
+        changes.append("ereg() -> preg_match()")
+    if 'split(' in migrated:
+        migrated = migrated.replace('split(', 'explode(')
+        changes.append("split() -> explode()")
+    if 'session_register' in migrated:
+        changes.append("session_register() is deprecated - use $_SESSION")
+
+    migrated = re.sub(r'var\s+\$(\w+)', r'public $\1', migrated)
+    if 'public $' in migrated:
+        changes.append("var -> public (PHP4 -> PHP7)")
+
+    return {"migrated_code": migrated, "changes": changes}
+
+
+def analyze_php(source: str):
+    issues = []
+
+    if re.search(r"\bmysql_\w+\b", source):
+        issues.append("Deprecated mysql_* functions found — use mysqli or PDO")
+    if 'ereg(' in source:
+        issues.append("ereg() found — use preg_match() or PCRE")
+    if 'split(' in source:
+        issues.append("split() found — use explode() or preg_split()")
+    if 'session_register' in source:
+        issues.append("session_register() found — use $_SESSION instead")
+    if re.search(r"\bvar\s+\$\w+", source):
+        issues.append("PHP4-style property declarations found — use public/protected/private")
+    if re.search(r"\becho\s+\$\w+", source) and 'htmlspecialchars' not in source:
+        issues.append("Raw output detected — consider escaping HTML output")
+
+    return {"issues": issues}
+
+
+@app.post("/migrate-php")
+async def migrate_php_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = migrate_php(source)
+    result["filename"] = file.filename
+    return result
+
+
+@app.post("/analyze-php")
+async def analyze_php_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = analyze_php(source)
+    result["filename"] = file.filename
+    return result
+
+
 def migrate_java(source: str):
     changes = []
     migrated = source
