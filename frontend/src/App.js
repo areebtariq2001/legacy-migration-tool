@@ -16,6 +16,7 @@ function App() {
     if (language === "java") endpoint = mode === "analyze" ? "/analyze-java" : "/migrate-java";
     if (language === "php") endpoint = mode === "analyze" ? "/analyze-php" : "/migrate-php";
     if (language === "cobol") endpoint = mode === "analyze" ? "/analyze-cobol" : "/migrate-cobol";
+    if (mode === "ai") endpoint = "/ai-suggest";
     const res = await fetch(API + endpoint, { method: "POST", body: formData });
     const data = await res.json();
     setResult(data);
@@ -49,13 +50,14 @@ function App() {
           <button onClick={() => setLanguage("php")} style={btn(language === "php", "#7c3aed")}>PHP</button>
           <button onClick={() => setLanguage("cobol")} style={btn(language === "cobol", "#7c3aed")}>COBOL</button>
         </div>
-        <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
+        <div style={{ marginBottom: "20px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
           <button onClick={() => setMode("analyze")} style={btn(mode === "analyze", "#38bdf8")}>Analyze</button>
           <button onClick={() => setMode("migrate")} style={btn(mode === "migrate", "#38bdf8")}>Migrate</button>
+          <button onClick={() => setMode("ai")} style={btn(mode === "ai", "#f59e0b")}>AI Suggest</button>
         </div>
         <input type="file" accept={language === "java" ? ".java" : language === "php" ? ".php" : language === "cobol" ? ".cbl,.cob" : ".py"} onChange={(e) => setFile(e.target.files[0])} style={{ width: "100%", padding: "10px", marginBottom: "20px", background: "#334155", border: "none", borderRadius: "8px", color: "white" }} />
-        <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "12px", background: "#38bdf8", border: "none", borderRadius: "8px", color: "#0f172a", fontWeight: "bold", fontSize: "16px", cursor: "pointer" }}>
-          {loading ? "Processing..." : mode === "analyze" ? "Analyze Now" : "Migrate Now"}
+        <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "12px", background: mode === "ai" ? "#f59e0b" : "#38bdf8", border: "none", borderRadius: "8px", color: "#0f172a", fontWeight: "bold", fontSize: "16px", cursor: "pointer" }}>
+          {loading ? "Processing..." : mode === "analyze" ? "Analyze Now" : mode === "ai" ? "Get AI Suggestions" : "Migrate Now"}
         </button>
         {mode === "migrate" && (
           <button onClick={handleDownload} style={{ width: "100%", padding: "12px", background: "#22c55e", border: "none", borderRadius: "8px", color: "white", fontWeight: "bold", fontSize: "16px", cursor: "pointer", marginTop: "10px" }}>
@@ -66,6 +68,7 @@ function App() {
       {result && (
         <div style={{ maxWidth: "600px", margin: "0 auto", background: "#1e293b", padding: "30px", borderRadius: "12px" }}>
           <h3 style={{ color: "#38bdf8" }}>Results: {result.filename}</h3>
+          {result.suggestions && <p style={{ color: "#94a3b8" }}>{result.suggestions}</p>}
           {result.functions && <p>Functions: {result.functions.length > 0 ? result.functions.join(", ") : "None"}</p>}
           {result.methods && <p>Methods: {result.methods.length > 0 ? result.methods.join(", ") : "None"}</p>}
           {result.classes && <p>Classes: {result.classes.length > 0 ? result.classes.join(", ") : "None"}</p>}
