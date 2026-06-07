@@ -1,4 +1,8 @@
-placeholder
+import { useState } from 'react';
+function App() {
+return (<div><h1>Legacy Code Migration Tool</h1></div>);
+}
+export default App;
 import { useState } from 'react';
 
 function App() {
@@ -116,29 +120,5 @@ function App() {
             <p>Methods: {result.methods.length > 0 ? result.methods.join(', ') : 'None'}</p>
           )}
           {result.classes && (
-            <p>Classes: {result.classes.length > 0 ? result.classes.join(', ') : 'None'}</p>
-          )}
-          {result.imports && (
-            <p>Imports: {result.imports.length > 0 ? result.imports.join(', ') : 'None'}</p>
-          )}
-          {result.issues && (
-            <p>Issues: {result.issues.length > 0 ? result.issues.join(', ') : 'No issues found!'}</p>
-          )}
-          {result.changes && (
-            <p>Changes: {result.changes.length > 0 ? result.changes.join(', ') : 'No changes needed!'}</p>
-          )}
-          {result.migrated_code && (
-            <div>
-              <h4 style={{ color: '#38bdf8' }}>Migrated Code:</h4>
-              <pre style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', overflow: 'auto', fontSize: '13px' }}>
-                {result.migrated_code}
-              </pre>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default App;
+            <p>Classes: {result.classes.length > 0 ? result.classes.join(', '
+              
