@@ -18,7 +18,6 @@ app.add_middleware(
 def analyze_code(source):
     tree = ast.parse(source)
     functions, classes, imports, issues = [], [], [], []
-
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             functions.append(node.name)
@@ -30,25 +29,17 @@ def analyze_code(source):
         elif isinstance(node, ast.ImportFrom):
             if node.module:
                 imports.append(node.module)
-
     if 'xrange' in source:
         issues.append("xrange() found — use range()")
     if 'print ' in source and 'print(' not in source:
         issues.append("print statement found — use print()")
     if 'raw_input' in source:
         issues.append("raw_input() found — use input()")
-
-    return {
-        "functions": functions,
-        "classes": classes,
-        "imports": imports,
-        "issues": issues
-    }
+    return {"functions": functions, "classes": classes, "imports": imports, "issues": issues}
 
 def migrate_code(source):
     changes = []
     migrated = source
-
     if 'xrange' in migrated:
         migrated = migrated.replace('xrange', 'range')
         changes.append("xrange → range")
@@ -58,7 +49,6 @@ def migrate_code(source):
     if 'unicode(' in migrated:
         migrated = migrated.replace('unicode(', 'str(')
         changes.append("unicode → str")
-
     return {"migrated_code": migrated, "changes": changes}
 
 @app.post("/analyze")
@@ -77,7 +67,6 @@ async def migrate(file: UploadFile = File(...)):
     result["filename"] = file.filename
     return result
 
-
 @app.post("/download")
 async def download(file: UploadFile = File(...)):
     content = await file.read()
@@ -89,18 +78,15 @@ async def download(file: UploadFile = File(...)):
         filename = filename.replace('.py', '_migrated.py')
     else:
         filename = f"{filename}_migrated"
-
     return Response(
         content=migrated.encode('utf-8'),
         media_type='application/octet-stream',
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
-
 def migrate_php(source: str):
     changes = []
     migrated = source
-
     if 'mysql_connect' in migrated:
         migrated = migrated.replace('mysql_connect', 'mysqli_connect')
         changes.append("mysql_connect -> mysqli_connect")
@@ -110,7 +96,6 @@ def migrate_php(source: str):
     if 'mysql_fetch_array' in migrated:
         migrated = migrated.replace('mysql_fetch_array', 'mysqli_fetch_array')
         changes.append("mysql_fetch_array -> mysqli_fetch_array")
-
     if 'ereg(' in migrated:
         migrated = migrated.replace('ereg(', 'preg_match(')
         changes.append("ereg() -> preg_match()")
@@ -119,17 +104,13 @@ def migrate_php(source: str):
         changes.append("split() -> explode()")
     if 'session_register' in migrated:
         changes.append("session_register() is deprecated - use $_SESSION")
-
     migrated = re.sub(r'var\s+\$(\w+)', r'public $\1', migrated)
     if 'public $' in migrated:
         changes.append("var -> public (PHP4 -> PHP7)")
-
     return {"migrated_code": migrated, "changes": changes}
-
 
 def analyze_php(source: str):
     issues = []
-
     if re.search(r"\bmysql_\w+\b", source):
         issues.append("Deprecated mysql_* functions found — use mysqli or PDO")
     if 'ereg(' in source:
@@ -142,9 +123,7 @@ def analyze_php(source: str):
         issues.append("PHP4-style property declarations found — use public/protected/private")
     if re.search(r"\becho\s+\$\w+", source) and 'htmlspecialchars' not in source:
         issues.append("Raw output detected — consider escaping HTML output")
-
     return {"issues": issues}
-
 
 @app.post("/migrate-php")
 async def migrate_php_endpoint(file: UploadFile = File(...)):
@@ -154,7 +133,6 @@ async def migrate_php_endpoint(file: UploadFile = File(...)):
     result["filename"] = file.filename
     return result
 
-
 @app.post("/analyze-php")
 async def analyze_php_endpoint(file: UploadFile = File(...)):
     content = await file.read()
@@ -163,44 +141,28 @@ async def analyze_php_endpoint(file: UploadFile = File(...)):
     result["filename"] = file.filename
     return result
 
-
 def migrate_java(source: str):
     changes = []
     migrated = source
-
-    # detect presence of main
     if 'public static void main' in migrated:
         changes.append("main method detected")
-
-    # convert simple String local variable declarations to `var` (Java 10+)
     migrated = re.sub(r"\bString\s+(\w+)\s*=", r"var \1 =", migrated)
     if re.search(r"\bvar\s+\w+\s*=", migrated):
         changes.append("String declarations -> var (Java 10+)")
-
-    # Logging recommendation
     if 'System.out.println' in migrated:
         changes.append("System.out.println detected - consider using Logger")
-
-    # for-loop patterns
     if re.search(r"for\s*\(\s*int\s+\w+\s*=\s*0", migrated):
         changes.append("Old-style for loop detected - consider enhanced for loop or streams")
-
-    # StringBuffer -> StringBuilder
     if 'StringBuffer' in migrated:
         migrated = migrated.replace('StringBuffer', 'StringBuilder')
         changes.append("StringBuffer -> StringBuilder")
-
-    # new Integer() -> Integer.valueOf()
     if 'new Integer(' in migrated:
         migrated = migrated.replace('new Integer(', 'Integer.valueOf(')
         changes.append("new Integer() -> Integer.valueOf()")
-
     return {"migrated_code": migrated, "changes": changes}
-
 
 def analyze_java(source: str):
     issues = []
-
     if re.search(r"\bStringBuffer\b", source):
         issues.append("Use StringBuilder instead of StringBuffer when single-threaded")
     if re.search(r"\bnew\s+Integer\s*\(", source):
@@ -215,13 +177,9 @@ def analyze_java(source: str):
         issues.append("Consider using java.time APIs instead of Date")
     if re.search(r"\bpublic\s+static\s+void\s+main\s*\(", source):
         issues.append("Contains main method — consider separating application entrypoint from library code")
-
-    # quick heuristic for missing try-with-resources when using streams/readers
     if re.search(r"new\s+File(InputStream|Reader)|BufferedReader\(|FileInputStream\(|FileReader\(|BufferedWriter\(|FileWriter\(", source) and 'try (' not in source:
         issues.append("Resource handling detected — consider try-with-resources to ensure proper closing")
-
     return {"issues": issues}
-
 
 @app.post("/migrate-java")
 async def migrate_java_endpoint(file: UploadFile = File(...)):
@@ -230,7 +188,6 @@ async def migrate_java_endpoint(file: UploadFile = File(...)):
     result = migrate_java(source)
     result["filename"] = file.filename
     return result
-
 
 @app.post("/analyze-java")
 async def analyze_java_endpoint(file: UploadFile = File(...)):
@@ -241,17 +198,5 @@ async def analyze_java_endpoint(file: UploadFile = File(...)):
     return result
 
 @app.get("/")
-from fastapi.middleware.cors import CORSMiddleware
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-
+def root():
+    return {"message": "Legacy Migration Tool API is running!"}
