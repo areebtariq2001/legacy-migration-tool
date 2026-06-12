@@ -6,7 +6,7 @@ const[loading,setLoading]=useState(false);
 const[mode,setMode]=useState("analyze");
 const[language,setLanguage]=useState("python");
 const[copied,setCopied]=useState(false);
-const API="https://legacy-migration-tool-production.up.railway.app";
+const API="https://legacy-migration-tool-1.onrender.com";
 const handleSubmit=async()=>{
 if(!file)return alert("Please select a file first!");
 setLoading(true);
