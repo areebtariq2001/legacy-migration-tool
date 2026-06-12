@@ -1,10 +1,8 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import Response
+from fastapi import FastAPI, UploadFile, File, Request
+from fastapi.responses import Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import ast
-import os
 import re
-from collections import defaultdict, Counter
 
 app = FastAPI()
 
@@ -14,10 +12,33 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
+@app.middleware("http")
+async def cors_handler(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return JSONResponse(
+            content={},
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "86400",
+            }
+        )
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
 def analyze_code(source):
-    tree = ast.parse(source)
+    try:
+        tree = ast.parse(source)
+    except:
+        return {"functions": [], "classes": [], "imports": [], "issues": ["Could not parse file"]}
     functions, classes, imports, issues = [], [], [], []
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
@@ -31,11 +52,11 @@ def analyze_code(source):
             if node.module:
                 imports.append(node.module)
     if 'xrange' in source:
-        issues.append("xrange() found — use range()")
+        issues.append("xrange() found - use range()")
     if 'print ' in source and 'print(' not in source:
-        issues.append("print statement found — use print()")
+        issues.append("print statement found - use print()")
     if 'raw_input' in source:
-        issues.append("raw_input() found — use input()")
+        issues.append("raw_input() found - use input()")
     return {"functions": functions, "classes": classes, "imports": imports, "issues": issues}
 
 def migrate_code(source):
@@ -43,13 +64,13 @@ def migrate_code(source):
     migrated = source
     if 'xrange' in migrated:
         migrated = migrated.replace('xrange', 'range')
-        changes.append("xrange → range")
+        changes.append("xrange -> range")
     if 'raw_input' in migrated:
         migrated = migrated.replace('raw_input', 'input')
-        changes.append("raw_input → input")
+        changes.append("raw_input -> input")
     if 'unicode(' in migrated:
         migrated = migrated.replace('unicode(', 'str(')
-        changes.append("unicode → str")
+        changes.append("unicode -> str")
     return {"migrated_code": migrated, "changes": changes}
 
 @app.post("/analyze")
@@ -77,8 +98,6 @@ async def download(file: UploadFile = File(...)):
     filename = file.filename
     if filename.endswith('.py'):
         filename = filename.replace('.py', '_migrated.py')
-    else:
-        filename = f"{filename}_migrated"
     return Response(
         content=migrated.encode('utf-8'),
         media_type='application/octet-stream',
@@ -103,27 +122,17 @@ def migrate_php(source: str):
     if 'split(' in migrated:
         migrated = migrated.replace('split(', 'explode(')
         changes.append("split() -> explode()")
-    if 'session_register' in migrated:
-        changes.append("session_register() is deprecated - use $_SESSION")
     migrated = re.sub(r'var\s+\$(\w+)', r'public $\1', migrated)
-    if 'public $' in migrated:
-        changes.append("var -> public (PHP4 -> PHP7)")
     return {"migrated_code": migrated, "changes": changes}
 
 def analyze_php(source: str):
     issues = []
     if re.search(r"\bmysql_\w+\b", source):
-        issues.append("Deprecated mysql_* functions found — use mysqli or PDO")
+        issues.append("Deprecated mysql_* functions found - use mysqli or PDO")
     if 'ereg(' in source:
-        issues.append("ereg() found — use preg_match() or PCRE")
+        issues.append("ereg() found - use preg_match()")
     if 'split(' in source:
-        issues.append("split() found — use explode() or preg_split()")
-    if 'session_register' in source:
-        issues.append("session_register() found — use $_SESSION instead")
-    if re.search(r"\bvar\s+\$\w+", source):
-        issues.append("PHP4-style property declarations found — use public/protected/private")
-    if re.search(r"\becho\s+\$\w+", source) and 'htmlspecialchars' not in source:
-        issues.append("Raw output detected — consider escaping HTML output")
+        issues.append("split() found - use explode()")
     return {"issues": issues}
 
 @app.post("/migrate-php")
@@ -145,15 +154,6 @@ async def analyze_php_endpoint(file: UploadFile = File(...)):
 def migrate_java(source: str):
     changes = []
     migrated = source
-    if 'public static void main' in migrated:
-        changes.append("main method detected")
-    migrated = re.sub(r"\bString\s+(\w+)\s*=", r"var \1 =", migrated)
-    if re.search(r"\bvar\s+\w+\s*=", migrated):
-        changes.append("String declarations -> var (Java 10+)")
-    if 'System.out.println' in migrated:
-        changes.append("System.out.println detected - consider using Logger")
-    if re.search(r"for\s*\(\s*int\s+\w+\s*=\s*0", migrated):
-        changes.append("Old-style for loop detected - consider enhanced for loop or streams")
     if 'StringBuffer' in migrated:
         migrated = migrated.replace('StringBuffer', 'StringBuilder')
         changes.append("StringBuffer -> StringBuilder")
@@ -165,21 +165,11 @@ def migrate_java(source: str):
 def analyze_java(source: str):
     issues = []
     if re.search(r"\bStringBuffer\b", source):
-        issues.append("Use StringBuilder instead of StringBuffer when single-threaded")
+        issues.append("Use StringBuilder instead of StringBuffer")
     if re.search(r"\bnew\s+Integer\s*\(", source):
-        issues.append("Use Integer.valueOf() or autoboxing instead of new Integer()")
+        issues.append("Use Integer.valueOf() instead of new Integer()")
     if re.search(r"\bSystem\.out\.println\b", source):
-        issues.append("Consider using a logging framework (java.util.logging, SLF4J, Log4j)")
-    if re.search(r"for\s*\(\s*int\s+\w+\s*=\s*0", source):
-        issues.append("Old-style for loop found — consider enhanced for loop or streams API")
-    if re.search(r"\b(Vector|Hashtable)\b", source):
-        issues.append("Consider using ArrayList/HashMap instead of Vector/Hashtable")
-    if re.search(r"\b\bDate\b", source) and not re.search(r"\b(LocalDate|LocalDateTime|java\.time)\b", source):
-        issues.append("Consider using java.time APIs instead of Date")
-    if re.search(r"\bpublic\s+static\s+void\s+main\s*\(", source):
-        issues.append("Contains main method — consider separating application entrypoint from library code")
-    if re.search(r"new\s+File(InputStream|Reader)|BufferedReader\(|FileInputStream\(|FileReader\(|BufferedWriter\(|FileWriter\(", source) and 'try (' not in source:
-        issues.append("Resource handling detected — consider try-with-resources to ensure proper closing")
+        issues.append("Consider using a logging framework")
     return {"issues": issues}
 
 @app.post("/migrate-java")
