@@ -5,12 +5,14 @@ const[results,setResults]=useState([]);
 const[loading,setLoading]=useState(false);
 const[mode,setMode]=useState("analyze");
 const[language,setLanguage]=useState("python");
+const[progress,setProgress]=useState(0);
 const API="https://legacy-migration-tool-1.onrender.com";
 
 const handleSubmit=async()=>{
 if(files.length===0)return alert("Please select files first!");
 setLoading(true);
 setResults([]);
+setProgress(0);
 const allResults=[];
 for(let i=0;i<files.length;i++){
 const formData=new FormData();
@@ -27,8 +29,9 @@ allResults.push(data);
 }catch(e){
 allResults.push({filename:files[i].name,error:"Failed to process"});
 }
+setProgress(Math.round(((i+1)/files.length)*100));
+setResults([...allResults]);
 }
-setResults(allResults);
 setLoading(false);
 };
 
@@ -74,6 +77,17 @@ Click to select files (multiple allowed)
 </label>
 {files.length>0&&<p style={{color:"#94a3b8",marginTop:"8px"}}>{files.length} file(s) selected: {files.map(f=>f.name).join(", ")}</p>}
 </div>
+{loading&&(
+<div style={{marginBottom:"16px"}}>
+<div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
+<span style={{color:"#94a3b8",fontSize:"13px"}}>Processing files...</span>
+<span style={{color:"#38bdf8",fontSize:"13px"}}>{progress}%</span>
+</div>
+<div style={{background:"#334155",borderRadius:"8px",height:"8px"}}>
+<div style={{background:"#38bdf8",borderRadius:"8px",height:"8px",width:progress+"%",transition:"width 0.3s ease"}}></div>
+</div>
+</div>
+)}
 <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"12px",borderRadius:"8px",border:"none",background:loading?"#334155":"#38bdf8",color:loading?"#94a3b8":"#0f172a",fontWeight:"700",cursor:"pointer"}}>
 {loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":"Migrate Files"}
 </button>
