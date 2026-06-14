@@ -45,6 +45,10 @@ a.download=result.filename+"_migrated.py";
 a.click();
 };
 
+const totalIssues=results.reduce((acc,r)=>acc+(r.issues?r.issues.length:0),0);
+const totalChanges=results.reduce((acc,r)=>acc+(r.changes?r.changes.length:0),0);
+const filesWithIssues=results.filter(r=>r.issues&&r.issues.length>0).length;
+
 const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
 
@@ -92,8 +96,24 @@ Click to select files (multiple allowed)
 {loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":"Migrate Files"}
 </button>
 </div>
+
 {results.length>0&&(
 <div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"16px"}}>
+<div style={{background:"rgba(56,189,248,0.1)",border:"1px solid #38bdf8",borderRadius:"12px",padding:"16px",textAlign:"center"}}>
+<div style={{fontSize:"24px",fontWeight:"700",color:"#38bdf8"}}>{results.length}</div>
+<div style={{fontSize:"12px",color:"#94a3b8"}}>Files Processed</div>
+</div>
+<div style={{background:"rgba(248,113,113,0.1)",border:"1px solid #f87171",borderRadius:"12px",padding:"16px",textAlign:"center"}}>
+<div style={{fontSize:"24px",fontWeight:"700",color:"#f87171"}}>{totalIssues}</div>
+<div style={{fontSize:"12px",color:"#94a3b8"}}>Issues Found</div>
+</div>
+<div style={{background:"rgba(74,222,128,0.1)",border:"1px solid #4ade80",borderRadius:"12px",padding:"16px",textAlign:"center"}}>
+<div style={{fontSize:"24px",fontWeight:"700",color:"#4ade80"}}>{totalChanges}</div>
+<div style={{fontSize:"12px",color:"#94a3b8"}}>Changes Made</div>
+</div>
+</div>
+
 <h3 style={{color:"#38bdf8"}}>Results ({results.length} files)</h3>
 {results.map((result,idx)=>(
 <div key={idx} style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"12px",padding:"20px",marginBottom:"12px"}}>
