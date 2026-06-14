@@ -6,6 +6,7 @@ const[loading,setLoading]=useState(false);
 const[mode,setMode]=useState("analyze");
 const[language,setLanguage]=useState("python");
 const[progress,setProgress]=useState(0);
+const[copied,setCopied]=useState({});
 const API="https://legacy-migration-tool-1.onrender.com";
 
 const handleSubmit=async()=>{
@@ -13,6 +14,7 @@ if(files.length===0)return alert("Please select files first!");
 setLoading(true);
 setResults([]);
 setProgress(0);
+setCopied({});
 const allResults=[];
 for(let i=0;i<files.length;i++){
 const formData=new FormData();
@@ -45,9 +47,14 @@ a.download=result.filename+"_migrated.py";
 a.click();
 };
 
+const handleCopy=(idx,code)=>{
+navigator.clipboard.writeText(code);
+setCopied({...copied,[idx]:true});
+setTimeout(()=>setCopied(prev=>({...prev,[idx]:false})),2000);
+};
+
 const totalIssues=results.reduce((acc,r)=>acc+(r.issues?r.issues.length:0),0);
 const totalChanges=results.reduce((acc,r)=>acc+(r.changes?r.changes.length:0),0);
-const filesWithIssues=results.filter(r=>r.issues&&r.issues.length>0).length;
 
 const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
@@ -128,9 +135,14 @@ Click to select files (multiple allowed)
 <div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
 <span style={{color:"#38bdf8",fontSize:"13px"}}>Migrated Code:</span>
+<div style={{display:"flex",gap:"8px"}}>
+<button onClick={()=>handleCopy(idx,result.migrated_code)} style={{padding:"4px 12px",borderRadius:"6px",border:"1px solid #38bdf8",background:copied[idx]?"#38bdf8":"transparent",color:copied[idx]?"#0f172a":"#38bdf8",cursor:"pointer",fontSize:"12px"}}>
+{copied[idx]?"Copied!":"Copy"}
+</button>
 <button onClick={()=>handleDownload(result)} style={{padding:"4px 12px",borderRadius:"6px",border:"1px solid #22c55e",background:"transparent",color:"#22c55e",cursor:"pointer",fontSize:"12px"}}>
 Download
 </button>
+</div>
 </div>
 <pre style={{background:"#0f172a",padding:"12px",borderRadius:"8px",overflow:"auto",fontSize:"11px",maxHeight:"200px"}}>{result.migrated_code}</pre>
 </div>
