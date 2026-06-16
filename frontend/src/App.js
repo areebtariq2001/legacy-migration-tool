@@ -28,10 +28,11 @@ for(let i=0;i<files.length;i++){
 const formData=new FormData();
 formData.append("file",files[i]);
 let endpoint="/analyze";
-if(language==="python")endpoint=mode==="analyze"?"/analyze":"/migrate";
-if(language==="java")endpoint=mode==="analyze"?"/analyze-java":"/migrate-java";
-if(language==="php")endpoint=mode==="analyze"?"/analyze-php":"/migrate-php";
-if(language==="cobol")endpoint=mode==="analyze"?"/analyze-cobol":"/migrate-cobol";
+if(language==="python")endpoint=mode==="analyze"?"/analyze":mode==="migrate"?"/migrate":"/ai-suggest";
+if(language==="java")endpoint=mode==="analyze"?"/analyze-java":mode==="migrate"?"/migrate-java":"/ai-suggest";
+if(language==="php")endpoint=mode==="analyze"?"/analyze-php":mode==="migrate"?"/migrate-php":"/ai-suggest";
+if(language==="cobol")endpoint=mode==="analyze"?"/analyze-cobol":mode==="migrate"?"/migrate-cobol":"/ai-suggest";
+if(mode==="ai")endpoint="/ai-suggest";
 try{
 const res=await fetch(API+endpoint,{method:"POST",body:formData});
 const data=await res.json();
@@ -87,14 +88,14 @@ return(
 ))}
 </div>
 <div style={{display:"flex",gap:"8px",marginBottom:"16px"}}>
-{[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"]].map(([m,label,color])=>(
+{[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["ai","AI Suggest","#f59e0b"]].map(([m,label,color])=>(
 <button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"10px",borderRadius:"8px",border:mode===m?"2px solid "+color:"1px solid "+border,background:mode===m?color+"22":"transparent",color:mode===m?color:subtext,cursor:"pointer"}}>
 {label}
 </button>
 ))}
 </div>
 <div style={{border:"2px dashed "+border,borderRadius:"8px",padding:"20px",textAlign:"center",marginBottom:"16px"}}>
-<input type="file" multiple accept=".py,.java,.php,.cbl" onChange={e=>setFiles(Array.from(e.target.files))} style={{display:"none"}} id="fileInput"/>
+<input type="file" multiple accept=".py,.java,.php,.cbl" onChange={e=>setFiles(Array.from(e.target.files))} id="fileInput" style={{display:"none"}}/>
 <label htmlFor="fileInput" style={{cursor:"pointer",color:"#38bdf8"}}>
 Click to select files (multiple allowed)
 </label>
@@ -112,7 +113,7 @@ Click to select files (multiple allowed)
 </div>
 )}
 <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"12px",borderRadius:"8px",border:"none",background:loading?"#334155":"#38bdf8",color:loading?"#94a3b8":"#0f172a",fontWeight:"700",cursor:"pointer"}}>
-{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":"Migrate Files"}
+{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":"Get AI Suggestions"}
 </button>
 </div>
 
@@ -143,6 +144,12 @@ Click to select files (multiple allowed)
 {result.imports&&result.imports.length>0&&<p style={{fontSize:"13px",color:text}}>Imports: {result.imports.join(", ")}</p>}
 {result.issues&&<p style={{color:result.issues.length>0?"#f87171":"#4ade80",fontSize:"13px"}}>Issues: {result.issues.length>0?result.issues.join(", "):"No issues!"}</p>}
 {result.changes&&<p style={{color:"#4ade80",fontSize:"13px"}}>Changes: {result.changes.length>0?result.changes.join(", "):"No changes needed!"}</p>}
+{result.suggestions&&(
+<div style={{marginTop:"8px"}}>
+<p style={{color:"#f59e0b",fontSize:"13px",fontWeight:"bold"}}>AI Suggestions:</p>
+<pre style={{background:codebg,color:text,padding:"12px",borderRadius:"8px",overflow:"auto",fontSize:"11px",maxHeight:"200px",whiteSpace:"pre-wrap"}}>{result.suggestions}</pre>
+</div>
+)}
 {result.migrated_code&&(
 <div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
