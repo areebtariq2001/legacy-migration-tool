@@ -167,27 +167,34 @@ def migrate_cobol(source: str):
 
 def ai_suggest(source: str, language: str):
     HF_TOKEN = os.environ.get("HF_TOKEN", "")
-    prompt = f"Review this {language} code and suggest improvements in 3 bullet points:\n\n{source[:500]}\n\nSuggestions:"
     
     try:
-        headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+        headers = {
+            "Authorization": f"Bearer {HF_TOKEN}",
+            "Content-Type": "application/json"
+        }
         payload = {
-            "inputs": prompt,
-            "parameters": {"max_new_tokens": 200, "temperature": 0.7}
+            "model": "mistralai/Mistral-7B-Instruct-v0.2",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": f"Review this {language} code and give 3 specific improvement suggestions:\n\n{source[:500]}"
+                }
+            ],
+            "max_tokens": 200
         }
         response = requests.post(
-            "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+            "https://router.huggingface.co/hf-inference/v1/chat/completions",
             headers=headers,
             json=payload,
             timeout=30
         )
         result = response.json()
-        if isinstance(result, list) and len(result) > 0:
-            text = result[0].get("generated_text", "")
-            suggestions = text.replace(prompt, "").strip()
+        if "choices" in result:
+            suggestions = result["choices"][0]["message"]["content"]
             return {"suggestions": suggestions}
         else:
-            return {"suggestions": "Could not generate suggestions. Try again."}
+            return {"suggestions": str(result)}
     except Exception as e:
         return {"suggestions": f"AI service error: {str(e)}"}
 
