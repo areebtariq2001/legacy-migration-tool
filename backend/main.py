@@ -167,14 +167,13 @@ def migrate_cobol(source: str):
 
 def ai_suggest(source: str, language: str):
     HF_TOKEN = os.environ.get("HF_TOKEN", "")
-    
     try:
         headers = {
             "Authorization": f"Bearer {HF_TOKEN}",
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "mistralai/Mistral-7B-Instruct-v0.2",
+            "model": "Qwen/Qwen2.5-72B-Instruct",
             "messages": [
                 {
                     "role": "user",
