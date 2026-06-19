@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import ast
 import re
 import os
-import requests
+import google.generativeai as genai
 
 app = FastAPI()
 
@@ -166,75 +166,8 @@ def migrate_cobol(source: str):
     return {"migrated_code": migrated, "changes": changes}
 
 def ai_suggest(source: str, language: str):
-    HF_TOKEN = os.environ.get("HF_TOKEN", "")
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
     try:
-        headers = {
-            "Authorization": f"Bearer {HF_TOKEN}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": f"Review this {language} code and give 3 specific improvement suggestions:\n\n{source[:500]}"
-                }
-            ],
-            "max_tokens": 200
-        }
-        response = requests.post(
-            "https://router.huggingface.co/hf-inference/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        result = response.json()
-        if "choices" in result:
-            suggestions = result["choices"][0]["message"]["content"]
-            return {"suggestions": suggestions}
-        else:
-            return {"suggestions": str(result)}
-    except Exception as e:
-        return {"suggestions": f"AI service error: {str(e)}"}
-
-@app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
-    content = await file.read()
-    source = content.decode("utf-8")
-    result = analyze_code(source)
-    result["filename"] = file.filename
-    return result
-
-@app.post("/migrate")
-async def migrate(file: UploadFile = File(...)):
-    content = await file.read()
-    source = content.decode("utf-8")
-    result = migrate_code(source)
-    result["filename"] = file.filename
-    return result
-
-@app.post("/download")
-async def download(file: UploadFile = File(...)):
-    content = await file.read()
-    source = content.decode("utf-8")
-    result = migrate_code(source)
-    migrated = result.get("migrated_code", "")
-    filename = file.filename
-    if filename.endswith('.py'):
-        filename = filename.replace('.py', '_migrated.py')
-    return Response(
-        content=migrated.encode('utf-8'),
-        media_type='application/octet-stream',
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
-    )
-
-@app.post("/analyze-php")
-async def analyze_php_endpoint(file: UploadFile = File(...)):
-    content = await file.read()
-    source = content.decode("utf-8", errors='ignore')
-    result = analyze_php(source)
-    result["filename"] = file.filename
-    return result
-
-@app.post("/migrate-php")
-async def migrate_php_endpoint(file:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        prompt =
