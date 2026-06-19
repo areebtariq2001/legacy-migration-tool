@@ -170,4 +170,99 @@ def ai_suggest(source: str, language: str):
     try:
         genai.configure(api_key=GEMINI_API_KEY)
         model = genai.GenerativeModel("gemini-1.5-flash")
-        prompt =
+        prompt = f"Review this {language} code and give 3 specific improvement suggestions:\n\n{source[:500]}"
+        response = model.generate_content(prompt)
+        return {"suggestions": response.text}
+    except Exception as e:
+        return {"suggestions": f"AI service error: {str(e)}"}
+
+@app.post("/analyze")
+async def analyze(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8")
+    result = analyze_code(source)
+    result["filename"] = file.filename
+    return result
+
+@app.post("/migrate")
+async def migrate(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8")
+    result = migrate_code(source)
+    result["filename"] = file.filename
+    return result
+
+@app.post("/download")
+async def download(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8")
+    result = migrate_code(source)
+    migrated = result.get("migrated_code", "")
+    filename = file.filename
+    if filename.endswith('.py'):
+        filename = filename.replace('.py', '_migrated.py')
+    return Response(
+        content=migrated.encode('utf-8'),
+        media_type='application/octet-stream',
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+@app.post("/analyze-php")
+async def analyze_php_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = analyze_php(source)
+    result["filename"] = file.filename
+    return result
+
+@app.post("/migrate-php")
+async def migrate_php_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = migrate_php(source)
+    result["filename"] = file.filename
+    return result
+
+@app.post("/analyze-java")
+async def analyze_java_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = analyze_java(source)
+    result["filename"] = file.filename
+    return result
+
+@app.post("/migrate-java")
+async def migrate_java_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = migrate_java(source)
+    result["filename"] = file.filename
+    return result
+
+@app.post("/analyze-cobol")
+async def analyze_cobol_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = analyze_cobol(source)
+    result["filename"] = file.filename
+    return result
+
+@app.post("/migrate-cobol")
+async def migrate_cobol_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = migrate_cobol(source)
+    result["filename"] = file.filename
+    return result
+
+@app.post("/ai-suggest")
+async def ai_suggest_endpoint(file: UploadFile = File(...), language: str = "python"):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = ai_suggest(source, language)
+    result["filename"] = file.filename
+    return result
+
+@app.get("/")
+def root():
+    return {"message": "Legacy Migration Tool API is running!"}
