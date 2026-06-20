@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import ast
 import re
 import os
-import google.generativeai as genai
+import requests
 
 app = FastAPI()
 
@@ -166,13 +166,34 @@ def migrate_cobol(source: str):
     return {"migrated_code": migrated, "changes": changes}
 
 def ai_suggest(source: str, language: str):
-    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        prompt = f"Review this {language} code and give 3 specific improvement suggestions:\n\n{source[:500]}"
-        response = model.generate_content(prompt)
-        return {"suggestions": response.text}
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "llama3-8b-8192",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": f"Review this {language} code and give 3 specific improvement suggestions:\n\n{source[:500]}"
+                }
+            ],
+            "max_tokens": 200
+        }
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        result = response.json()
+        if "choices" in result:
+            suggestions = result["choices"][0]["message"]["content"]
+            return {"suggestions": suggestions}
+        else:
+            return {"suggestions": str(result)}
     except Exception as e:
         return {"suggestions": f"AI service error: {str(e)}"}
 
