@@ -32,9 +32,9 @@ function App() {
       
       let endpoint = "/analyze";
       
-      // Fixed Routing Logic by Claude
+      // Fixed AI Endpoint with dynamic language query parameter
       if (mode === "ai") {
-        endpoint = "/ai-suggest";
+        endpoint = `/ai-suggest?language=${language}`;
       } else if (language === "python") {
         endpoint = mode === "analyze" ? "/analyze" : "/migrate";
       } else if (language === "java") {
