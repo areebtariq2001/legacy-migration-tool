@@ -1,15 +1,17 @@
 {
   "files": {
     "main.css": "/legacy-migration-tool/static/css/main.e6c13ad2.css",
-    "main.js": "/legacy-migration-tool/static/js/main.7c33336a.js",
+    "main.js": "/legacy-migration-tool/static/js/main.54839a32.js",
+    "static/js/762.b0f42f61.chunk.js": "/legacy-migration-tool/static/js/762.b0f42f61.chunk.js",
     "static/js/453.20359781.chunk.js": "/legacy-migration-tool/static/js/453.20359781.chunk.js",
     "index.html": "/legacy-migration-tool/index.html",
     "main.e6c13ad2.css.map": "/legacy-migration-tool/static/css/main.e6c13ad2.css.map",
-    "main.7c33336a.js.map": "/legacy-migration-tool/static/js/main.7c33336a.js.map",
+    "main.54839a32.js.map": "/legacy-migration-tool/static/js/main.54839a32.js.map",
+    "762.b0f42f61.chunk.js.map": "/legacy-migration-tool/static/js/762.b0f42f61.chunk.js.map",
     "453.20359781.chunk.js.map": "/legacy-migration-tool/static/js/453.20359781.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.7c33336a.js"
+    "static/js/main.54839a32.js"
   ]
 }
