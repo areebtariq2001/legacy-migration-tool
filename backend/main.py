@@ -177,10 +177,10 @@ def ai_suggest(source: str, language: str):
             "messages": [
                 {
                     "role": "user",
-                    "content": f"Review this {language} code and give 3 specific improvement suggestions:\n\n{source[:500]}"
+                    "content": f"You are a code review expert. Review this {language} code and give exactly 3 specific improvement suggestions for {language}:\n\n{source[:500]}"
                 }
             ],
-            "max_tokens": 200
+            "max_tokens": 300
         }
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -277,9 +277,12 @@ async def migrate_cobol_endpoint(file: UploadFile = File(...)):
     return result
 
 @app.post("/ai-suggest")
-async def ai_suggest_endpoint(file: UploadFile = File(...), language: str = "python"):
+async def ai_suggest_endpoint(file: UploadFile = File(...)):
     content = await file.read()
     source = content.decode("utf-8", errors='ignore')
+    ext = file.filename.split('.')[-1].lower()
+    lang_map = {"py": "python", "java": "java", "php": "php", "cbl": "cobol"}
+    language = lang_map.get(ext, "python")
     result = ai_suggest(source, language)
     result["filename"] = file.filename
     return result
