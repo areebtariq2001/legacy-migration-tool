@@ -69,6 +69,32 @@ def track_usage(action, filename):
     stats["logs"] = stats["logs"][:50]
     save_stats(stats)
 
+def call_groq(prompt):
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+    try:
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "llama-3.1-8b-instant",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 500
+        }
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        result = response.json()
+        if "choices" in result:
+            return result["choices"][0]["message"]["content"]
+        else:
+            return str(result)
+    except Exception as e:
+        return f"AI service error: {str(e)}"
+
 def analyze_code(source):
     try:
         tree = ast.parse(source)
@@ -198,37 +224,17 @@ def migrate_cobol(source: str):
         changes.append("DISPLAY -> print()")
     return {"migrated_code": migrated, "changes": changes}
 
-def ai_suggest(source: str, language: str):
-    GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-    try:
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": "llama-3.1-8b-instant",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": f"You are a code review expert. Review this {language} code and give exactly 3 specific improvement suggestions for {language}:\n\n{source}"
-                }
-            ],
-            "max_tokens": 300
-        }
-        response = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        result = response.json()
-        if "choices" in result:
-            suggestions = result["choices"][0]["message"]["content"]
-            return {"suggestions": suggestions}
-        else:
-            return {"suggestions": str(result)}
-    except Exception as e:
-        return {"suggestions": f"AI service error: {str(e)}"}
+def ai_suggest(source, language):
+    prompt = f"You are a code review expert. Review this {language} code and give exactly 3 specific improvement suggestions for {language}:\n\n{source}"
+    return {"suggestions": call_groq(prompt)}
+
+def ai_explain(source, language):
+    prompt = f"You are a programming teacher. Explain this {language} code in simple terms, section by section, so a beginner can understand what it does:\n\n{source}"
+    return {"explanation": call_groq(prompt)}
+
+def ai_generate_tests(source, language):
+    prompt = f"You are a test engineer. Write unit tests for this {language} code. Provide only the test code with brief comments:\n\n{source}"
+    return {"tests": call_groq(prompt)}
 
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
@@ -317,16 +323,35 @@ async def migrate_cobol_endpoint(file: UploadFile = File(...)):
     track_usage("migrate-cobol", file.filename)
     return result
 
+def detect_language(filename):
+    ext = filename.split('.')[-1].lower()
+    return {"py": "python", "java": "java", "php": "php", "cbl": "cobol"}.get(ext, "python")
+
 @app.post("/ai-suggest")
 async def ai_suggest_endpoint(file: UploadFile = File(...)):
     content = await file.read()
     source = content.decode("utf-8", errors='ignore')
-    ext = file.filename.split('.')[-1].lower()
-    lang_map = {"py": "python", "java": "java", "php": "php", "cbl": "cobol"}
-    language = lang_map.get(ext, "python")
-    result = ai_suggest(source, language)
+    result = ai_suggest(source, detect_language(file.filename))
     result["filename"] = file.filename
     track_usage("ai-suggest", file.filename)
+    return result
+
+@app.post("/explain")
+async def explain_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = ai_explain(source, detect_language(file.filename))
+    result["filename"] = file.filename
+    track_usage("explain", file.filename)
+    return result
+
+@app.post("/generate-tests")
+async def generate_tests_endpoint(file: UploadFile = File(...)):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    result = ai_generate_tests(source, detect_language(file.filename))
+    result["filename"] = file.filename
+    track_usage("generate-tests", file.filename)
     return result
 
 @app.get("/stats")
