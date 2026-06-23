@@ -68,28 +68,16 @@ Back to Home
 <div style={codeStyle}>https://legacy-migration-tool-1.onrender.com</div>
 <h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Endpoints</h2>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
-<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Analyze Python code for legacy issues</p>
+<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze, /migrate</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Python code analysis and migration</p>
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
-<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /migrate</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Migrate Python 2 code to Python 3</p>
-</div>
-<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
-<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-java, /migrate-java</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Java code analysis and migration</p>
-</div>
-<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
-<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-php, /migrate-php</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>PHP code analysis and migration</p>
-</div>
-<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
-<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-cobol, /migrate-cobol</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>COBOL code analysis and migration</p>
+<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-java, /migrate-java, /analyze-php, /migrate-php, /analyze-cobol, /migrate-cobol</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Multi-language analysis and migration</p>
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"24px"}}>
-<p style={{color:"#f59e0b",fontWeight:"bold"}}>POST /ai-suggest</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Get AI-powered code improvement suggestions</p>
+<p style={{color:"#f59e0b",fontWeight:"bold"}}>POST /ai-suggest, /explain, /generate-tests</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI-powered suggestions, explanations, and test generation</p>
 </div>
 <h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Example: cURL</h2>
 <div style={codeStyle}>{`curl -X POST \\
@@ -102,16 +90,6 @@ url = "https://legacy-migration-tool-1.onrender.com/migrate"
 files = {"file": open("myscript.py", "rb")}
 response = requests.post(url, files=files)
 print(response.json())`}</div>
-<h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Example: JavaScript</h2>
-<div style={codeStyle}>{`const formData = new FormData();
-formData.append("file", fileInput.files[0]);
-
-fetch("https://legacy-migration-tool-1.onrender.com/migrate", {
-  method: "POST",
-  body: formData
-})
-.then(res => res.json())
-.then(data => console.log(data));`}</div>
 <h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Response Format</h2>
 <div style={codeStyle}>{`{
   "migrated_code": "...",
@@ -155,23 +133,15 @@ Dashboard
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"24px",maxWidth:"900px",marginBottom:"60px"}}>
 {[
 ["Instant Migration","Upload files and get migrated code in seconds"],
+["AI Explain Mode","Understand legacy code with AI explanations"],
+["Test Generator","Auto-generate unit tests for your code"],
 ["Diff Viewer","See exactly what changed side by side"],
-["Batch Processing","Migrate multiple files at once"],
-["AI Suggestions","Get intelligent improvement suggestions"],
-["PDF Reports","Download professional migration reports"],
+["Batch + ZIP","Migrate multiple files and download as ZIP"],
 ["Usage Dashboard","Track all migrations with audit logs"]
 ].map(([title,desc])=>(
 <div key={title} style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"12px",padding:"24px"}}>
 <div style={{color:"#38bdf8",fontSize:"16px",fontWeight:"700",marginBottom:"8px"}}>{title}</div>
 <div style={{color:"#94a3b8",fontSize:"13px"}}>{desc}</div>
-</div>
-))}
-</div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"24px",maxWidth:"600px",marginBottom:"40px"}}>
-{[["4+","Languages"],["Unlimited","Files"],["$0","Cost"]].map(([num,label])=>(
-<div key={label} style={{textAlign:"center"}}>
-<div style={{fontSize:"36px",fontWeight:"700",color:"#38bdf8"}}>{num}</div>
-<div style={{fontSize:"13px",color:"#94a3b8"}}>{label}</div>
 </div>
 ))}
 </div>
@@ -215,6 +185,8 @@ const formData=new FormData();
 formData.append("file",files[i]);
 let endpoint="/analyze";
 if(mode==="ai"){endpoint="/ai-suggest";}
+else if(mode==="explain"){endpoint="/explain";}
+else if(mode==="tests"){endpoint="/generate-tests";}
 else if(language==="python"){endpoint=mode==="analyze"?"/analyze":"/migrate";}
 else if(language==="java"){endpoint=mode==="analyze"?"/analyze-java":"/migrate-java";}
 else if(language==="php"){endpoint=mode==="analyze"?"/analyze-php":"/migrate-php";}
@@ -307,14 +279,6 @@ if(y>270){doc.addPage();y=20;}
 doc.text("  - "+change,14,y);y+=5;
 });
 }
-if(result.suggestions){
-doc.text("AI Suggestions:",14,y);y+=5;
-const lines=doc.splitTextToSize(result.suggestions,180);
-lines.slice(0,10).forEach(line=>{
-if(y>270){doc.addPage();y=20;}
-doc.text(line,14,y);y+=5;
-});
-}
 y+=8;
 });
 doc.save("starbuild_report_"+date.replace(/\//g,"-")+".pdf");
@@ -331,6 +295,7 @@ const totalChanges=results.reduce((acc,r)=>acc+(r.changes?r.changes.length:0),0)
 const migratedCount=results.filter(r=>r.migrated_code).length;
 const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
+const modes=[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["ai","AI Suggest","#f59e0b"],["explain","Explain","#a78bfa"],["tests","Gen Tests","#ec4899"]];
 
 return(
 <div style={{minHeight:"100vh",background:bg,color:text,fontFamily:"Arial",transition:"all 0.3s"}}>
@@ -353,9 +318,9 @@ Home
 </button>
 ))}
 </div>
-<div style={{display:"flex",gap:"8px",marginBottom:"16px"}}>
-{[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["ai","AI Suggest","#f59e0b"]].map(([m,label,color])=>(
-<button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"10px",borderRadius:"8px",border:mode===m?"2px solid "+color:"1px solid "+border,background:mode===m?color+"22":"transparent",color:mode===m?color:subtext,cursor:"pointer"}}>
+<div style={{display:"flex",gap:"8px",marginBottom:"16px",flexWrap:"wrap"}}>
+{modes.map(([m,label,color])=>(
+<button key={m} onClick={()=>setMode(m)} style={{flex:"1 1 30%",padding:"10px",borderRadius:"8px",border:mode===m?"2px solid "+color:"1px solid "+border,background:mode===m?color+"22":"transparent",color:mode===m?color:subtext,cursor:"pointer"}}>
 {label}
 </button>
 ))}
@@ -379,7 +344,7 @@ Click to select files (multiple allowed)
 </div>
 )}
 <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"12px",borderRadius:"8px",border:"none",background:loading?"#334155":"#38bdf8",color:loading?"#94a3b8":"#0f172a",fontWeight:"700",cursor:"pointer"}}>
-{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":"Get AI Suggestions"}
+{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":mode==="ai"?"Get AI Suggestions":mode==="explain"?"Explain Code":"Generate Tests"}
 </button>
 </div>
 {results.length>0&&(
@@ -425,7 +390,19 @@ Download PDF Report
 {result.suggestions&&(
 <div style={{marginTop:"8px"}}>
 <p style={{color:"#f59e0b",fontSize:"13px",fontWeight:"bold"}}>AI Suggestions:</p>
-<pre style={{background:codebg,color:text,padding:"12px",borderRadius:"8px",overflow:"auto",fontSize:"11px",maxHeight:"200px",whiteSpace:"pre-wrap"}}>{result.suggestions}</pre>
+<pre style={{background:codebg,color:text,padding:"12px",borderRadius:"8px",overflow:"auto",fontSize:"11px",maxHeight:"250px",whiteSpace:"pre-wrap"}}>{result.suggestions}</pre>
+</div>
+)}
+{result.explanation&&(
+<div style={{marginTop:"8px"}}>
+<p style={{color:"#a78bfa",fontSize:"13px",fontWeight:"bold"}}>Code Explanation:</p>
+<pre style={{background:codebg,color:text,padding:"12px",borderRadius:"8px",overflow:"auto",fontSize:"11px",maxHeight:"300px",whiteSpace:"pre-wrap"}}>{result.explanation}</pre>
+</div>
+)}
+{result.tests&&(
+<div style={{marginTop:"8px"}}>
+<p style={{color:"#ec4899",fontSize:"13px",fontWeight:"bold"}}>Generated Tests:</p>
+<pre style={{background:codebg,color:text,padding:"12px",borderRadius:"8px",overflow:"auto",fontSize:"11px",maxHeight:"300px",whiteSpace:"pre-wrap"}}>{result.tests}</pre>
 </div>
 )}
 {result.migrated_code&&(
