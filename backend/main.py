@@ -5,6 +5,8 @@ import ast
 import re
 import os
 import requests
+import json
+from datetime import datetime
 
 app = FastAPI()
 
@@ -35,6 +37,37 @@ async def cors_handler(request: Request, call_next):
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
     response.headers["Access-Control-Allow-Headers"] = "*"
     return response
+
+STATS_FILE = "stats.json"
+
+def load_stats():
+    try:
+        with open(STATS_FILE, "r") as f:
+            return json.load(f)
+    except:
+        return {"total_files": 0, "total_migrations": 0, "total_analyses": 0, "logs": []}
+
+def save_stats(stats):
+    try:
+        with open(STATS_FILE, "w") as f:
+            json.dump(stats, f)
+    except:
+        pass
+
+def track_usage(action, filename):
+    stats = load_stats()
+    stats["total_files"] += 1
+    if "migrate" in action:
+        stats["total_migrations"] += 1
+    elif "analyze" in action:
+        stats["total_analyses"] += 1
+    stats["logs"].insert(0, {
+        "action": action,
+        "filename": filename,
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+    stats["logs"] = stats["logs"][:50]
+    save_stats(stats)
 
 def analyze_code(source):
     try:
@@ -203,6 +236,7 @@ async def analyze(file: UploadFile = File(...)):
     source = content.decode("utf-8")
     result = analyze_code(source)
     result["filename"] = file.filename
+    track_usage("analyze", file.filename)
     return result
 
 @app.post("/migrate")
@@ -211,6 +245,7 @@ async def migrate(file: UploadFile = File(...)):
     source = content.decode("utf-8")
     result = migrate_code(source)
     result["filename"] = file.filename
+    track_usage("migrate", file.filename)
     return result
 
 @app.post("/download")
@@ -234,6 +269,7 @@ async def analyze_php_endpoint(file: UploadFile = File(...)):
     source = content.decode("utf-8", errors='ignore')
     result = analyze_php(source)
     result["filename"] = file.filename
+    track_usage("analyze-php", file.filename)
     return result
 
 @app.post("/migrate-php")
@@ -242,6 +278,7 @@ async def migrate_php_endpoint(file: UploadFile = File(...)):
     source = content.decode("utf-8", errors='ignore')
     result = migrate_php(source)
     result["filename"] = file.filename
+    track_usage("migrate-php", file.filename)
     return result
 
 @app.post("/analyze-java")
@@ -250,6 +287,7 @@ async def analyze_java_endpoint(file: UploadFile = File(...)):
     source = content.decode("utf-8", errors='ignore')
     result = analyze_java(source)
     result["filename"] = file.filename
+    track_usage("analyze-java", file.filename)
     return result
 
 @app.post("/migrate-java")
@@ -258,6 +296,7 @@ async def migrate_java_endpoint(file: UploadFile = File(...)):
     source = content.decode("utf-8", errors='ignore')
     result = migrate_java(source)
     result["filename"] = file.filename
+    track_usage("migrate-java", file.filename)
     return result
 
 @app.post("/analyze-cobol")
@@ -266,6 +305,7 @@ async def analyze_cobol_endpoint(file: UploadFile = File(...)):
     source = content.decode("utf-8", errors='ignore')
     result = analyze_cobol(source)
     result["filename"] = file.filename
+    track_usage("analyze-cobol", file.filename)
     return result
 
 @app.post("/migrate-cobol")
@@ -274,6 +314,7 @@ async def migrate_cobol_endpoint(file: UploadFile = File(...)):
     source = content.decode("utf-8", errors='ignore')
     result = migrate_cobol(source)
     result["filename"] = file.filename
+    track_usage("migrate-cobol", file.filename)
     return result
 
 @app.post("/ai-suggest")
@@ -285,7 +326,12 @@ async def ai_suggest_endpoint(file: UploadFile = File(...)):
     language = lang_map.get(ext, "python")
     result = ai_suggest(source, language)
     result["filename"] = file.filename
+    track_usage("ai-suggest", file.filename)
     return result
+
+@app.get("/stats")
+def get_stats():
+    return load_stats()
 
 @app.get("/")
 def root():
