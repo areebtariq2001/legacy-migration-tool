@@ -1,41 +1,47 @@
-from fastapi import FastAPI, UploadFile, File, Request
-from fastapi.responses import Response, JSONResponse
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-import ast
-import re
-import os
-import requests
+from typing import Optional
 
 app = FastAPI()
 
-# 1. Sirf ek jagah CORS configuration rakhein (Middleware best hai)
+# CORS configuration: Ye allow karta hai ke aapka GitHub Pages ka frontend backend se baat kar sake
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ... (Apne saare analyze_code, migrate_code, analyze_php, etc. functions yahan waise hi rehne dein jaise thay) ...
+# Placeholder functions - Yahan apna asli migration logic lagayein
+def migrate_code_logic(source, target):
+    return f"// Migrated code to {target}\n\n" + source
 
-# 2. Fixed AI Suggest Endpoint
-@app.post("/ai-suggest")
-async def ai_suggest_endpoint(file: UploadFile = File(...), language: str = "python"):
-    content = await file.read()
-    source = content.decode("utf-8", errors='ignore')
-    
-    # Language detection logic
-    ext = file.filename.split('.')[-1].lower()
-    lang_map = {"py": "python", "java": "java", "php": "php", "cbl": "cobol", "cob": "cobol"}
-    actual_lang = lang_map.get(ext, language)
-        
-    result = ai_suggest(source, actual_lang)
-    result["filename"] = file.filename
-    return result
-
-# ... (Baaki saare endpoints waise hi rehne dein) ...
+def ai_suggest_logic(source, lang):
+    return {"suggestion": "AI suggestion for " + lang, "status": "success"}
 
 @app.get("/")
 def root():
     return {"message": "Legacy Migration Tool API is running!"}
+
+# Migrate Endpoint
+@app.post("/migrate")
+async def migrate_endpoint(file: UploadFile = File(...), target_lang: str = Form("python")):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    
+    # Logic call
+    result = migrate_code_logic(source, target_lang)
+    
+    return {"migrated_code": result, "filename": file.filename}
+
+# AI Suggest Endpoint
+@app.post("/ai-suggest")
+async def ai_suggest_endpoint(file: UploadFile = File(...), language: str = Form("python")):
+    content = await file.read()
+    source = content.decode("utf-8", errors='ignore')
+    
+    # Logic call
+    result = ai_suggest_logic(source, language)
+    result["filename"] = file.filename
+    
+    return result
