@@ -1,6 +1,7 @@
 import{useState}from"react";
 import ReactDiffViewer from"react-diff-viewer-continued";
 import JSZip from"jszip";
+import jsPDF from"jspdf";
 function App(){
 const[files,setFiles]=useState([]);
 const[results,setResults]=useState([]);
@@ -78,6 +79,63 @@ const a=document.createElement("a");
 a.href=url;
 a.download="migrated_files.zip";
 a.click();
+};
+
+const handleDownloadReport=()=>{
+if(results.length===0)return alert("No results to generate report!");
+const doc=new jsPDF();
+const date=new Date().toLocaleDateString();
+doc.setFontSize(20);
+doc.setTextColor(56,189,248);
+doc.text("StarBuild Migration Report",105,20,{align:"center"});
+doc.setFontSize(10);
+doc.setTextColor(100,116,139);
+doc.text("Generated: "+date,105,28,{align:"center"});
+doc.setFontSize(12);
+doc.setTextColor(0,0,0);
+doc.text("Summary",14,40);
+doc.setFontSize(10);
+doc.text("Total Files: "+results.length,14,48);
+const totalIssues=results.reduce((acc,r)=>acc+(r.issues?r.issues.length:0),0);
+const totalChanges=results.reduce((acc,r)=>acc+(r.changes?r.changes.length:0),0);
+doc.text("Total Issues Found: "+totalIssues,14,54);
+doc.text("Total Changes Made: "+totalChanges,14,60);
+let y=74;
+results.forEach((result,idx)=>{
+if(y>270){doc.addPage();y=20;}
+doc.setFontSize(12);
+doc.setTextColor(56,189,248);
+doc.text((idx+1)+". "+result.filename,14,y);
+y+=8;
+doc.setFontSize(9);
+doc.setTextColor(0,0,0);
+if(result.issues&&result.issues.length>0){
+doc.text("Issues:",14,y);y+=5;
+result.issues.forEach(issue=>{
+if(y>270){doc.addPage();y=20;}
+const lines=doc.splitTextToSize("  - "+issue,180);
+doc.text(lines,14,y);
+y+=lines.length*5;
+});
+}
+if(result.changes&&result.changes.length>0){
+doc.text("Changes:",14,y);y+=5;
+result.changes.forEach(change=>{
+if(y>270){doc.addPage();y=20;}
+doc.text("  - "+change,14,y);y+=5;
+});
+}
+if(result.suggestions){
+doc.text("AI Suggestions:",14,y);y+=5;
+const lines=doc.splitTextToSize(result.suggestions,180);
+lines.slice(0,10).forEach(line=>{
+if(y>270){doc.addPage();y=20;}
+doc.text(line,14,y);y+=5;
+});
+}
+y+=8;
+});
+doc.save("starbuild_report_"+date.replace(/\//g,"-")+".pdf");
 };
 
 const handleCopy=(idx,code)=>{
@@ -162,11 +220,16 @@ Click to select files (multiple allowed)
 </div>
 </div>
 
+<div style={{display:"flex",gap:"12px",marginBottom:"16px"}}>
 {migratedCount>0&&(
-<button onClick={handleDownloadAllZip} style={{width:"100%",padding:"12px",borderRadius:"8px",border:"1px solid #f59e0b",background:"rgba(245,158,11,0.1)",color:"#f59e0b",fontWeight:"700",cursor:"pointer",marginBottom:"16px"}}>
-Download All Migrated Files as ZIP ({migratedCount} files)
+<button onClick={handleDownloadAllZip} style={{flex:1,padding:"12px",borderRadius:"8px",border:"1px solid #f59e0b",background:"rgba(245,158,11,0.1)",color:"#f59e0b",fontWeight:"700",cursor:"pointer"}}>
+Download All as ZIP ({migratedCount} files)
 </button>
 )}
+<button onClick={handleDownloadReport} style={{flex:1,padding:"12px",borderRadius:"8px",border:"1px solid #a78bfa",background:"rgba(167,139,250,0.1)",color:"#a78bfa",fontWeight:"700",cursor:"pointer"}}>
+Download PDF Report
+</button>
+</div>
 
 <h3 style={{color:"#38bdf8"}}>Results ({results.length} files)</h3>
 {results.map((result,idx)=>(
