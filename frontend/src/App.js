@@ -1,5 +1,6 @@
 import{useState}from"react";
 import ReactDiffViewer from"react-diff-viewer-continued";
+import JSZip from"jszip";
 function App(){
 const[files,setFiles]=useState([]);
 const[results,setResults]=useState([]);
@@ -60,6 +61,25 @@ a.download=result.filename+"_migrated";
 a.click();
 };
 
+const handleDownloadAllZip=async()=>{
+const zip=new JSZip();
+const folder=zip.folder("migrated_files");
+let added=0;
+results.forEach(result=>{
+if(result.migrated_code){
+folder.file(result.filename+"_migrated",result.migrated_code);
+added++;
+}
+});
+if(added===0)return alert("No migrated files to download!");
+const blob=await zip.generateAsync({type:"blob"});
+const url=window.URL.createObjectURL(blob);
+const a=document.createElement("a");
+a.href=url;
+a.download="migrated_files.zip";
+a.click();
+};
+
 const handleCopy=(idx,code)=>{
 navigator.clipboard.writeText(code);
 setCopied({...copied,[idx]:true});
@@ -68,6 +88,7 @@ setTimeout(()=>setCopied(prev=>({...prev,[idx]:false})),2000);
 
 const totalIssues=results.reduce((acc,r)=>acc+(r.issues?r.issues.length:0),0);
 const totalChanges=results.reduce((acc,r)=>acc+(r.changes?r.changes.length:0),0);
+const migratedCount=results.filter(r=>r.migrated_code).length;
 
 const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
@@ -122,7 +143,7 @@ Click to select files (multiple allowed)
 
 {results.length>0&&(
 <div>
-<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"12px",marginBottom:"16px"}}>
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px",marginBottom:"16px"}}>
 <div style={{background:"rgba(56,189,248,0.1)",border:"1px solid #38bdf8",borderRadius:"12px",padding:"16px",textAlign:"center"}}>
 <div style={{fontSize:"24px",fontWeight:"700",color:"#38bdf8"}}>{results.length}</div>
 <div style={{fontSize:"12px",color:subtext}}>Files Processed</div>
@@ -135,7 +156,17 @@ Click to select files (multiple allowed)
 <div style={{fontSize:"24px",fontWeight:"700",color:"#4ade80"}}>{totalChanges}</div>
 <div style={{fontSize:"12px",color:subtext}}>Changes Made</div>
 </div>
+<div style={{background:"rgba(245,158,11,0.1)",border:"1px solid #f59e0b",borderRadius:"12px",padding:"16px",textAlign:"center"}}>
+<div style={{fontSize:"24px",fontWeight:"700",color:"#f59e0b"}}>{migratedCount}</div>
+<div style={{fontSize:"12px",color:subtext}}>Files Migrated</div>
 </div>
+</div>
+
+{migratedCount>0&&(
+<button onClick={handleDownloadAllZip} style={{width:"100%",padding:"12px",borderRadius:"8px",border:"1px solid #f59e0b",background:"rgba(245,158,11,0.1)",color:"#f59e0b",fontWeight:"700",cursor:"pointer",marginBottom:"16px"}}>
+Download All Migrated Files as ZIP ({migratedCount} files)
+</button>
+)}
 
 <h3 style={{color:"#38bdf8"}}>Results ({results.length} files)</h3>
 {results.map((result,idx)=>(
@@ -156,7 +187,7 @@ Click to select files (multiple allowed)
 {result.migrated_code&&(
 <div style={{marginTop:"12px"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
-<span style={{color:"#38bdf8",fontSize:"13px",fontWeight:"bold"}}>Diff View (Original vs Migrated):</span>
+<span style={{color:"#38bdf8",fontSize:"13px",fontWeight:"bold"}}>Diff View:</span>
 <div style={{display:"flex",gap:"8px"}}>
 <button onClick={()=>handleCopy(idx,result.migrated_code)} style={{padding:"4px 12px",borderRadius:"6px",border:"1px solid #38bdf8",background:copied[idx]?"#38bdf8":"transparent",color:copied[idx]?"#0f172a":"#38bdf8",cursor:"pointer",fontSize:"12px"}}>
 {copied[idx]?"Copied!":"Copy"}
