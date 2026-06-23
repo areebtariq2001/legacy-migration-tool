@@ -1,3 +1,11 @@
+/*!
+	Copyright (c) 2018 Jed Watson.
+	Licensed under the MIT License (MIT), see
+	http://jedwatson.github.io/classnames
+*/
+
+/*! js-yaml 4.2.0 https://github.com/nodeca/js-yaml @license MIT */
+
 /**
  * @license React
  * react-dom.production.min.js
