@@ -5,14 +5,11 @@ const handleAction = async (endpoint) => {
     for (let i = 0; i < files.length; i++) {
       formData.append("files", files[i]);
     }
-    
-    // YEH LINE ZAROORI HAI: Backend in fields ko dhund raha hai
-    formData.append(endpoint === "migrate" ? "target_lang" : "language", "python");
 
     try {
       const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
         method: "POST",
-        body: formData,
+        body: formData, // Ab sirf files bhej rahe hain
       });
       
       if (!response.ok) throw new Error("Server error: " + response.status);
