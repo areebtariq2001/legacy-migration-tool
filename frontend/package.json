@@ -3,15 +3,33 @@
   "version": "0.1.0",
   "homepage": "https://areebtariq2001.github.io/legacy-migration-tool/",
   "dependencies": {
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
     "react": "^18.0.0",
+    "react-diff-viewer-continued": "^4.2.2",
     "react-dom": "^18.0.0",
     "react-scripts": "5.0.1",
-    "react-diff-viewer-continued": "^4.2.2"
+    "web-vitals": "^5.3.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }

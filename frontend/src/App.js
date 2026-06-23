@@ -2,7 +2,55 @@ import{useState}from"react";
 import ReactDiffViewer from"react-diff-viewer-continued";
 import JSZip from"jszip";
 import jsPDF from"jspdf";
+function LandingPage({onLaunch}){
+return(
+<div style={{minHeight:"100vh",background:"linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",color:"white",fontFamily:"Arial",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",padding:"40px 20px"}}>
+<div style={{background:"rgba(56,189,248,0.1)",border:"1px solid #38bdf8",color:"#38bdf8",padding:"6px 16px",borderRadius:"20px",fontSize:"13px",marginBottom:"24px"}}>
+AI-Powered Code Migration
+</div>
+<h1 style={{fontSize:"56px",color:"#38bdf8",marginBottom:"16px"}}>StarBuild</h1>
+<p style={{fontSize:"20px",color:"#94a3b8",marginBottom:"40px",maxWidth:"600px"}}>
+Transform your legacy code to modern standards instantly. Supports Python, Java, PHP, and COBOL.
+</p>
+<button onClick={onLaunch} style={{background:"#38bdf8",color:"#0f172a",padding:"16px 40px",borderRadius:"8px",fontSize:"18px",fontWeight:"700",border:"none",cursor:"pointer",marginBottom:"60px"}}>
+Launch Tool Free
+</button>
+<div style={{display:"flex",gap:"12px",justifyContent:"center",marginBottom:"60px",flexWrap:"wrap"}}>
+{[["Python","#3b82f6"],["Java","#f59e0b"],["PHP","#8b5cf6"],["COBOL","#10b981"]].map(([lang,color])=>(
+<span key={lang} style={{padding:"8px 20px",borderRadius:"20px",fontWeight:"700",fontSize:"14px",background:color+"33",color:color,border:"1px solid "+color}}>
+{lang}
+</span>
+))}
+</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"24px",maxWidth:"900px",marginBottom:"60px"}}>
+{[
+["Instant Migration","Upload files and get migrated code in seconds"],
+["Diff Viewer","See exactly what changed side by side"],
+["Batch Processing","Migrate multiple files at once"],
+["AI Suggestions","Get intelligent improvement suggestions"],
+["PDF Reports","Download professional migration reports"],
+["100% Free","No credit card required"]
+].map(([title,desc])=>(
+<div key={title} style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"12px",padding:"24px"}}>
+<div style={{color:"#38bdf8",fontSize:"16px",fontWeight:"700",marginBottom:"8px"}}>{title}</div>
+<div style={{color:"#94a3b8",fontSize:"13px"}}>{desc}</div>
+</div>
+))}
+</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"24px",maxWidth:"600px",marginBottom:"40px"}}>
+{[["4+","Languages"],["Unlimited","Files"],["$0","Cost"]].map(([num,label])=>(
+<div key={label} style={{textAlign:"center"}}>
+<div style={{fontSize:"36px",fontWeight:"700",color:"#38bdf8"}}>{num}</div>
+<div style={{fontSize:"13px",color:"#94a3b8"}}>{label}</div>
+</div>
+))}
+</div>
+<div style={{color:"#64748b",fontSize:"13px"}}>2026 StarBuild - Built with AI</div>
+</div>
+);
+}
 function App(){
+const[showTool,setShowTool]=useState(false);
 const[files,setFiles]=useState([]);
 const[results,setResults]=useState([]);
 const[loading,setLoading]=useState(false);
@@ -19,6 +67,8 @@ const border=darkMode?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.1)";
 const text=darkMode?"white":"#0f172a";
 const subtext=darkMode?"#94a3b8":"#64748b";
 const codebg=darkMode?"#0f172a":"#e2e8f0";
+
+if(!showTool)return <LandingPage onLaunch={()=>setShowTool(true)}/>;
 
 const handleSubmit=async()=>{
 if(files.length===0)return alert("Please select files first!");
@@ -147,7 +197,6 @@ setTimeout(()=>setCopied(prev=>({...prev,[idx]:false})),2000);
 const totalIssues=results.reduce((acc,r)=>acc+(r.issues?r.issues.length:0),0);
 const totalChanges=results.reduce((acc,r)=>acc+(r.changes?r.changes.length:0),0);
 const migratedCount=results.filter(r=>r.migrated_code).length;
-
 const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
 
@@ -156,6 +205,9 @@ return(
 <div style={{textAlign:"center",padding:"40px 20px",position:"relative"}}>
 <button onClick={()=>setDarkMode(!darkMode)} style={{position:"absolute",right:"20px",top:"20px",padding:"8px 16px",borderRadius:"20px",border:"1px solid "+border,background:card,color:text,cursor:"pointer"}}>
 {darkMode?"Light Mode":"Dark Mode"}
+</button>
+<button onClick={()=>setShowTool(false)} style={{position:"absolute",left:"20px",top:"20px",padding:"8px 16px",borderRadius:"20px",border:"1px solid "+border,background:card,color:text,cursor:"pointer"}}>
+Home
 </button>
 <h1 style={{color:"#38bdf8"}}>StarBuild</h1>
 <p style={{color:subtext}}>Transform your legacy code to modern standards</p>
@@ -198,7 +250,6 @@ Click to select files (multiple allowed)
 {loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":"Get AI Suggestions"}
 </button>
 </div>
-
 {results.length>0&&(
 <div>
 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px",marginBottom:"16px"}}>
@@ -219,7 +270,6 @@ Click to select files (multiple allowed)
 <div style={{fontSize:"12px",color:subtext}}>Files Migrated</div>
 </div>
 </div>
-
 <div style={{display:"flex",gap:"12px",marginBottom:"16px"}}>
 {migratedCount>0&&(
 <button onClick={handleDownloadAllZip} style={{flex:1,padding:"12px",borderRadius:"8px",border:"1px solid #f59e0b",background:"rgba(245,158,11,0.1)",color:"#f59e0b",fontWeight:"700",cursor:"pointer"}}>
@@ -230,7 +280,6 @@ Download All as ZIP ({migratedCount} files)
 Download PDF Report
 </button>
 </div>
-
 <h3 style={{color:"#38bdf8"}}>Results ({results.length} files)</h3>
 {results.map((result,idx)=>(
 <div key={idx} style={{background:card,border:"1px solid "+border,borderRadius:"12px",padding:"20px",marginBottom:"12px"}}>
