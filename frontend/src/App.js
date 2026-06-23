@@ -2,7 +2,85 @@ import{useState}from"react";
 import ReactDiffViewer from"react-diff-viewer-continued";
 import JSZip from"jszip";
 import jsPDF from"jspdf";
-function LandingPage({onLaunch}){
+
+function ApiDocs({onBack}){
+const codeStyle={background:"#1e293b",color:"#e2e8f0",padding:"16px",borderRadius:"8px",overflow:"auto",fontSize:"13px",fontFamily:"monospace",whiteSpace:"pre-wrap"};
+return(
+<div style={{minHeight:"100vh",background:"#0f172a",color:"white",fontFamily:"Arial",padding:"40px 20px"}}>
+<div style={{maxWidth:"800px",margin:"0 auto"}}>
+<button onClick={onBack} style={{padding:"8px 16px",borderRadius:"20px",border:"1px solid rgba(255,255,255,0.2)",background:"rgba(255,255,255,0.05)",color:"white",cursor:"pointer",marginBottom:"24px"}}>
+Back to Home
+</button>
+<h1 style={{color:"#38bdf8",marginBottom:"8px"}}>StarBuild API Documentation</h1>
+<p style={{color:"#94a3b8",marginBottom:"32px"}}>Integrate StarBuild into your CI/CD pipeline or applications.</p>
+
+<h2 style={{color:"#38bdf8",fontSize:"20px",marginBottom:"12px"}}>Base URL</h2>
+<div style={codeStyle}>https://legacy-migration-tool-1.onrender.com</div>
+
+<h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Endpoints</h2>
+<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
+<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Analyze Python code for legacy issues</p>
+</div>
+<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
+<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /migrate</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Migrate Python 2 code to Python 3</p>
+</div>
+<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
+<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-java, /migrate-java</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Java code analysis and migration</p>
+</div>
+<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
+<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-php, /migrate-php</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>PHP code analysis and migration</p>
+</div>
+<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
+<p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-cobol, /migrate-cobol</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>COBOL code analysis and migration</p>
+</div>
+<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"24px"}}>
+<p style={{color:"#f59e0b",fontWeight:"bold"}}>POST /ai-suggest</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Get AI-powered code improvement suggestions</p>
+</div>
+
+<h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Example: cURL</h2>
+<div style={codeStyle}>{`curl -X POST \\
+  https://legacy-migration-tool-1.onrender.com/migrate \\
+  -F "file=@myscript.py"`}</div>
+
+<h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Example: Python</h2>
+<div style={codeStyle}>{`import requests
+
+url = "https://legacy-migration-tool-1.onrender.com/migrate"
+files = {"file": open("myscript.py", "rb")}
+response = requests.post(url, files=files)
+print(response.json())`}</div>
+
+<h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Example: JavaScript</h2>
+<div style={codeStyle}>{`const formData = new FormData();
+formData.append("file", fileInput.files[0]);
+
+fetch("https://legacy-migration-tool-1.onrender.com/migrate", {
+  method: "POST",
+  body: formData
+})
+.then(res => res.json())
+.then(data => console.log(data));`}</div>
+
+<h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Response Format</h2>
+<div style={codeStyle}>{`{
+  "migrated_code": "...",
+  "changes": ["xrange -> range", "raw_input -> input"],
+  "filename": "myscript.py"
+}`}</div>
+
+<div style={{color:"#64748b",fontSize:"13px",marginTop:"40px",textAlign:"center"}}>2026 StarBuild - API Documentation</div>
+</div>
+</div>
+);
+}
+
+function LandingPage({onLaunch,onApiDocs}){
 return(
 <div style={{minHeight:"100vh",background:"linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",color:"white",fontFamily:"Arial",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",padding:"40px 20px"}}>
 <div style={{background:"rgba(56,189,248,0.1)",border:"1px solid #38bdf8",color:"#38bdf8",padding:"6px 16px",borderRadius:"20px",fontSize:"13px",marginBottom:"24px"}}>
@@ -12,9 +90,14 @@ AI-Powered Code Migration
 <p style={{fontSize:"20px",color:"#94a3b8",marginBottom:"40px",maxWidth:"600px"}}>
 Transform your legacy code to modern standards instantly. Supports Python, Java, PHP, and COBOL.
 </p>
-<button onClick={onLaunch} style={{background:"#38bdf8",color:"#0f172a",padding:"16px 40px",borderRadius:"8px",fontSize:"18px",fontWeight:"700",border:"none",cursor:"pointer",marginBottom:"60px"}}>
+<div style={{display:"flex",gap:"12px",marginBottom:"60px",flexWrap:"wrap",justifyContent:"center"}}>
+<button onClick={onLaunch} style={{background:"#38bdf8",color:"#0f172a",padding:"16px 40px",borderRadius:"8px",fontSize:"18px",fontWeight:"700",border:"none",cursor:"pointer"}}>
 Launch Tool Free
 </button>
+<button onClick={onApiDocs} style={{background:"transparent",color:"#38bdf8",padding:"16px 40px",borderRadius:"8px",fontSize:"18px",fontWeight:"700",border:"1px solid #38bdf8",cursor:"pointer"}}>
+API Docs
+</button>
+</div>
 <div style={{display:"flex",gap:"12px",justifyContent:"center",marginBottom:"60px",flexWrap:"wrap"}}>
 {[["Python","#3b82f6"],["Java","#f59e0b"],["PHP","#8b5cf6"],["COBOL","#10b981"]].map(([lang,color])=>(
 <span key={lang} style={{padding:"8px 20px",borderRadius:"20px",fontWeight:"700",fontSize:"14px",background:color+"33",color:color,border:"1px solid "+color}}>
@@ -49,8 +132,9 @@ Launch Tool Free
 </div>
 );
 }
+
 function App(){
-const[showTool,setShowTool]=useState(false);
+const[view,setView]=useState("landing");
 const[files,setFiles]=useState([]);
 const[results,setResults]=useState([]);
 const[loading,setLoading]=useState(false);
@@ -68,7 +152,8 @@ const text=darkMode?"white":"#0f172a";
 const subtext=darkMode?"#94a3b8":"#64748b";
 const codebg=darkMode?"#0f172a":"#e2e8f0";
 
-if(!showTool)return <LandingPage onLaunch={()=>setShowTool(true)}/>;
+if(view==="landing")return <LandingPage onLaunch={()=>setView("tool")} onApiDocs={()=>setView("apidocs")}/>;
+if(view==="apidocs")return <ApiDocs onBack={()=>setView("landing")}/>;
 
 const handleSubmit=async()=>{
 if(files.length===0)return alert("Please select files first!");
@@ -206,7 +291,7 @@ return(
 <button onClick={()=>setDarkMode(!darkMode)} style={{position:"absolute",right:"20px",top:"20px",padding:"8px 16px",borderRadius:"20px",border:"1px solid "+border,background:card,color:text,cursor:"pointer"}}>
 {darkMode?"Light Mode":"Dark Mode"}
 </button>
-<button onClick={()=>setShowTool(false)} style={{position:"absolute",left:"20px",top:"20px",padding:"8px 16px",borderRadius:"20px",border:"1px solid "+border,background:card,color:text,cursor:"pointer"}}>
+<button onClick={()=>setView("landing")} style={{position:"absolute",left:"20px",top:"20px",padding:"8px 16px",borderRadius:"20px",border:"1px solid "+border,background:card,color:text,cursor:"pointer"}}>
 Home
 </button>
 <h1 style={{color:"#38bdf8"}}>StarBuild</h1>
