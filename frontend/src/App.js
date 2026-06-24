@@ -128,8 +128,6 @@ return(
 .sb-feature:hover{transform:translateY(-4px);border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.04)}
 .sb-lang:hover{transform:scale(1.05)}
 `}</style>
-
-{/* NAV */}
 <div style={{maxWidth:"1100px",margin:"0 auto",padding:"24px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
 <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
 <div style={{width:"32px",height:"32px",borderRadius:"8px",background:"linear-gradient(135deg,#38bdf8,#0ea5e9)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"800",color:"#0a0e1a",fontSize:"18px"}}>S</div>
@@ -140,8 +138,6 @@ return(
 <button className="sb-btn-ghost" onClick={onStats} style={{padding:"8px 16px",borderRadius:"8px",border:"1px solid rgba(255,255,255,0.15)",background:"transparent",color:"#cbd5e1",cursor:"pointer",fontSize:"14px"}}>Dashboard</button>
 </div>
 </div>
-
-{/* HERO */}
 <div style={{maxWidth:"1100px",margin:"0 auto",padding:"60px 24px 40px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"48px",alignItems:"center"}}>
 <div className="sb-fade">
 <div style={{display:"inline-block",background:"rgba(56,189,248,0.1)",border:"1px solid rgba(56,189,248,0.3)",color:"#38bdf8",padding:"6px 14px",borderRadius:"20px",fontSize:"13px",marginBottom:"24px",fontFamily:"monospace"}}>
@@ -162,8 +158,6 @@ View API
 </button>
 </div>
 </div>
-
-{/* CODE WINDOW */}
 <div className="sb-fade" style={{background:"#0d1424",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"12px",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.5)"}}>
 <div style={{display:"flex",alignItems:"center",gap:"8px",padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.02)"}}>
 <div style={{width:"12px",height:"12px",borderRadius:"50%",background:"#ef4444"}}></div>
@@ -178,8 +172,6 @@ View API
 </div>
 </div>
 </div>
-
-{/* LANGUAGES */}
 <div style={{maxWidth:"1100px",margin:"0 auto",padding:"20px 24px 60px"}}>
 <p style={{textAlign:"center",color:"#64748b",fontSize:"13px",marginBottom:"20px",textTransform:"uppercase",letterSpacing:"1px"}}>Supported Languages</p>
 <div style={{display:"flex",gap:"16px",justifyContent:"center",flexWrap:"wrap"}}>
@@ -190,8 +182,6 @@ View API
 ))}
 </div>
 </div>
-
-{/* FEATURES */}
 <div style={{maxWidth:"1100px",margin:"0 auto",padding:"20px 24px 80px"}}>
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"20px"}}>
 {[
@@ -209,8 +199,6 @@ View API
 ))}
 </div>
 </div>
-
-{/* CTA STRIP */}
 <div style={{maxWidth:"1100px",margin:"0 auto",padding:"0 24px 80px"}}>
 <div style={{background:"linear-gradient(135deg,rgba(56,189,248,0.1),rgba(14,165,233,0.05))",border:"1px solid rgba(56,189,248,0.2)",borderRadius:"16px",padding:"48px",textAlign:"center"}}>
 <h2 style={{color:"white",fontSize:"28px",marginBottom:"12px",fontWeight:"700"}}>Ready to modernize your code?</h2>
@@ -220,8 +208,6 @@ Launch Tool Free
 </button>
 </div>
 </div>
-
-{/* FOOTER */}
 <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",padding:"24px",textAlign:"center",color:"#64748b",fontSize:"13px"}}>
 2026 StarBuild \u2014 Built with AI assistance
 </div>
@@ -259,7 +245,8 @@ setProgress(0);
 setCopied({});
 const allResults=[];
 for(let i=0;i<files.length;i++){
-const originalCode=await files[i].text();
+let originalCode="";
+try{originalCode=await files[i].text();}catch(e){originalCode="";}
 const formData=new FormData();
 formData.append("file",files[i]);
 let endpoint="/analyze";
@@ -272,12 +259,13 @@ else if(language==="php"){endpoint=mode==="analyze"?"/analyze-php":"/migrate-php
 else if(language==="cobol"){endpoint=mode==="analyze"?"/analyze-cobol":"/migrate-cobol";}
 try{
 const res=await fetch(API+endpoint,{method:"POST",body:formData});
+if(!res.ok){throw new Error("Server error "+res.status);}
 const data=await res.json();
 data.filename=files[i].name;
 data.original_code=originalCode;
 allResults.push(data);
 }catch(e){
-allResults.push({filename:files[i].name,error:"Failed to process"});
+allResults.push({filename:files[i].name,error:"Could not process this file. The server may be waking up (wait 30 seconds and try again), or the file type may be unsupported."});
 }
 setProgress(Math.round(((i+1)/files.length)*100));
 setResults([...allResults]);
@@ -460,7 +448,7 @@ Download PDF Report
 {results.map((result,idx)=>(
 <div key={idx} style={{background:card,border:"1px solid "+border,borderRadius:"12px",padding:"20px",marginBottom:"12px"}}>
 <h4 style={{color:"#38bdf8",margin:"0 0 8px 0"}}>{result.filename}</h4>
-{result.error&&<p style={{color:"#f87171"}}>{result.error}</p>}
+{result.error&&<p style={{color:"#f87171",fontSize:"13px"}}>{result.error}</p>}
 {result.functions&&result.functions.length>0&&<p style={{fontSize:"13px",color:text}}>Functions: {result.functions.join(", ")}</p>}
 {result.classes&&result.classes.length>0&&<p style={{fontSize:"13px",color:text}}>Classes: {result.classes.join(", ")}</p>}
 {result.imports&&result.imports.length>0&&<p style={{fontSize:"13px",color:text}}>Imports: {result.imports.join(", ")}</p>}
