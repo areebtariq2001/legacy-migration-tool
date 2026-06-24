@@ -159,7 +159,7 @@ def migrate_code(source):
     # print statement -> print()
     new_lines = []
     for line in migrated.split('\n'):
-        m = re.match(r'^(\s*)print\s+(?!\()(.+)$', line)
+        m = re.match(r'^(\s*)print\s+(?!\()(.+?)\s*$', line)
         if m:
             new_lines.append(f'{m.group(1)}print({m.group(2)})')
             if "print statement -> print()" not in changes:
