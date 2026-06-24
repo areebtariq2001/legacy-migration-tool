@@ -113,35 +113,43 @@ def analyze_code(source):
         elif isinstance(node, ast.ImportFrom):
             if node.module:
                 imports.append(node.module)
-    if 'xrange' in source:
-        issues.append("xrange() found - use range()")
+    py_issue_checks = [
+        ('xrange', "xrange() found - use range()"),
+        ('raw_input', "raw_input() found - use input()"),
+        ('has_key', "dict.has_key() found - use 'in' operator"),
+        ('iteritems', "iteritems() found - use items()"),
+        ('itervalues', "itervalues() found - use values()"),
+        ('iterkeys', "iterkeys() found - use keys()"),
+        ('unicode(', "unicode() found - use str()"),
+        ('basestring', "basestring found - use str"),
+        ('urllib2', "urllib2 found - use urllib.request"),
+        ('commands.getoutput', "commands module found - use subprocess"),
+        ('itertools.izip', "izip found - use built-in zip()"),
+        ('itertools.imap', "imap found - use built-in map()"),
+        ('itertools.ifilter', "ifilter found - use built-in filter()"),
+        ('.sort(cmp=', "sort(cmp=...) found - use key= instead"),
+        ('exec ', "exec statement found - use exec() function"),
+        ('<>', "<> operator found - use !="),
+        ('apply(', "apply() found - use func(*args)"),
+        ('execfile(', "execfile() found - use exec(open(...).read())"),
+        ('reduce(', "reduce() found - import from functools"),
+        ('StringIO', "StringIO found - use io.StringIO"),
+        ('cPickle', "cPickle found - use pickle"),
+        ('__cmp__', "__cmp__ found - use rich comparison methods"),
+    ]
+    for pattern, msg in py_issue_checks:
+        if pattern in source:
+            issues.append(msg)
     if re.search(r'\bprint\s+[^(]', source):
         issues.append("print statement found - use print()")
-    if 'raw_input' in source:
-        issues.append("raw_input() found - use input()")
-    if 'has_key' in source:
-        issues.append("dict.has_key() found - use 'in' operator")
-    if 'iteritems' in source:
-        issues.append("iteritems() found - use items()")
-    if 'itervalues' in source:
-        issues.append("itervalues() found - use values()")
-    if 'iterkeys' in source:
-        issues.append("iterkeys() found - use keys()")
-    if 'unicode(' in source:
-        issues.append("unicode() found - use str()")
-    if 'basestring' in source:
-        issues.append("basestring found - use str")
     if re.search(r'\bexcept\s+\w+\s*,', source):
         issues.append("old except syntax found - use 'except X as e'")
-    if 'urllib2' in source:
-        issues.append("urllib2 found - use urllib.request")
-    if 'commands.getoutput' in source:
-        issues.append("commands module found - use subprocess")
     return {"functions": functions, "classes": classes, "imports": imports, "issues": issues}
 
 def migrate_code(source):
     changes = []
     migrated = source
+    # Simple word/pattern replacements: (find, replace, label)
     rules = [
         (r'\bxrange\b', 'range', "xrange -> range"),
         (r'\braw_input\b', 'input', "raw_input -> input"),
@@ -151,12 +159,20 @@ def migrate_code(source):
         (r'\.itervalues\(\)', '.values()', "itervalues() -> values()"),
         (r'\.iterkeys\(\)', '.keys()', "iterkeys() -> keys()"),
         (r'import urllib2', 'import urllib.request', "urllib2 -> urllib.request"),
+        (r'\bitertools\.izip\b', 'zip', "izip -> zip"),
+        (r'\bitertools\.imap\b', 'map', "imap -> map"),
+        (r'\bitertools\.ifilter\b', 'filter', "ifilter -> filter"),
+        (r'\bcPickle\b', 'pickle', "cPickle -> pickle"),
+        (r'\bexecfile\(([^)]+)\)', r'exec(open(\1).read())', "execfile() -> exec(open().read())"),
+        (r'\bapply\((\w+),\s*([^)]+)\)', r'\1(*\2)', "apply() -> func(*args)"),
+        (r'\s<>\s', ' != ', "<> -> !="),
+        (r'\bStringIO\.StringIO\b', 'io.StringIO', "StringIO -> io.StringIO"),
     ]
     for pattern, repl, label in rules:
         if re.search(pattern, migrated):
             migrated = re.sub(pattern, repl, migrated)
             changes.append(label)
-    # print statement -> print()
+    # print statement -> print() (line by line, handles indentation)
     new_lines = []
     for line in migrated.split('\n'):
         m = re.match(r'^(\s*)print\s+(?!\()(.+?)\s*$', line)
@@ -168,10 +184,8 @@ def migrate_code(source):
             new_lines.append(line)
     migrated = '\n'.join(new_lines)
     # dict.has_key("x") -> "x" in dict
-    def haskey_repl(m):
-        return f'{m.group(2)} in {m.group(1)}'
     if re.search(r'(\w+)\.has_key\(([^)]+)\)', migrated):
-        migrated = re.sub(r'(\w+)\.has_key\(([^)]+)\)', haskey_repl, migrated)
+        migrated = re.sub(r'(\w+)\.has_key\(([^)]+)\)', r'\2 in \1', migrated)
         changes.append("has_key() -> in operator")
     # except X, e -> except X as e
     if re.search(r'except\s+(\w+)\s*,\s*(\w+)', migrated):
@@ -179,27 +193,77 @@ def migrate_code(source):
         changes.append("except X, e -> except X as e")
     return {"migrated_code": migrated, "changes": changes}
 
+# ---------- JAVA ----------
+def analyze_java(source):
+    issues = []
+    java_checks = [
+        (r"\bStringBuffer\b", "StringBuffer found - use StringBuilder"),
+        (r"\bnew\s+Integer\s*\(", "new Integer() found - use Integer.valueOf()"),
+        (r"\bnew\s+Boolean\s*\(", "new Boolean() found - use Boolean.valueOf()"),
+        (r"\bnew\s+Double\s*\(", "new Double() found - use Double.valueOf()"),
+        (r"\bnew\s+Long\s*\(", "new Long() found - use Long.valueOf()"),
+        (r"\bnew\s+Float\s*\(", "new Float() found - use Float.valueOf()"),
+        (r"\bnew\s+Character\s*\(", "new Character() found - use Character.valueOf()"),
+        (r"\bnew\s+Short\s*\(", "new Short() found - use Short.valueOf()"),
+        (r"\bnew\s+Byte\s*\(", "new Byte() found - use Byte.valueOf()"),
+        (r"\bVector\b", "Vector found - use ArrayList"),
+        (r"\bHashtable\b", "Hashtable found - use HashMap"),
+        (r"\bEnumeration\b", "Enumeration found - use Iterator"),
+        (r"\bStringTokenizer\b", "StringTokenizer found - use String.split()"),
+        (r"\.stop\(\)", "Thread.stop() found - deprecated and unsafe"),
+        (r"\.suspend\(\)", "Thread.suspend() found - deprecated and unsafe"),
+        (r"\.resume\(\)", "Thread.resume() found - deprecated and unsafe"),
+        (r"\bSystem\.out\.println\b", "System.out.println - consider a logging framework"),
+        (r"\bprintStackTrace\(\)", "printStackTrace() found - use a logger"),
+        (r"\bDate\s*\(\s*\)", "new Date() found - consider java.time.LocalDate"),
+        (r"\b\.finalize\(\)", "finalize() found - deprecated, use try-with-resources"),
+    ]
+    for pattern, msg in java_checks:
+        if re.search(pattern, source):
+            issues.append(msg)
+    return {"issues": issues}
+
+def migrate_java(source):
+    changes = []
+    migrated = source
+    rules = [
+        (r'\bStringBuffer\b', 'StringBuilder', "StringBuffer -> StringBuilder"),
+        (r'\bnew\s+Integer\(', 'Integer.valueOf(', "new Integer() -> Integer.valueOf()"),
+        (r'\bnew\s+Boolean\(', 'Boolean.valueOf(', "new Boolean() -> Boolean.valueOf()"),
+        (r'\bnew\s+Double\(', 'Double.valueOf(', "new Double() -> Double.valueOf()"),
+        (r'\bnew\s+Long\(', 'Long.valueOf(', "new Long() -> Long.valueOf()"),
+        (r'\bnew\s+Float\(', 'Float.valueOf(', "new Float() -> Float.valueOf()"),
+        (r'\bnew\s+Character\(', 'Character.valueOf(', "new Character() -> Character.valueOf()"),
+        (r'\bnew\s+Short\(', 'Short.valueOf(', "new Short() -> Short.valueOf()"),
+        (r'\bnew\s+Byte\(', 'Byte.valueOf(', "new Byte() -> Byte.valueOf()"),
+        (r'\bVector\b', 'ArrayList', "Vector -> ArrayList"),
+        (r'\bHashtable\b', 'HashMap', "Hashtable -> HashMap"),
+        (r'\bEnumeration\b', 'Iterator', "Enumeration -> Iterator"),
+    ]
+    for pattern, repl, label in rules:
+        if re.search(pattern, migrated):
+            migrated = re.sub(pattern, repl, migrated)
+            changes.append(label)
+    return {"migrated_code": migrated, "changes": changes}
+
 # ---------- PHP ----------
 def analyze_php(source):
     issues = []
-    if re.search(r"\bmysql_\w+\b", source):
-        issues.append("Deprecated mysql_* functions - use mysqli or PDO")
-    if 'ereg(' in source or 'eregi(' in source:
-        issues.append("ereg()/eregi() found - use preg_match()")
-    if re.search(r'\bsplit\(', source):
-        issues.append("split() found - use explode() or preg_split()")
-    if 'session_register' in source:
-        issues.append("session_register() found - use $_SESSION")
-    if re.search(r"\bvar\s+\$\w+", source):
-        issues.append("PHP4-style 'var' property - use public/protected/private")
-    if 'magic_quotes' in source:
-        issues.append("magic_quotes found - removed in PHP 5.4+")
-    if re.search(r'\bcreate_function\b', source):
-        issues.append("create_function() found - use anonymous functions")
-    if 'mcrypt_' in source:
-        issues.append("mcrypt_* found - use openssl or sodium")
-    if re.search(r'\bset_magic_quotes_runtime\b', source):
-        issues.append("set_magic_quotes_runtime() found - removed")
+    php_checks = [
+        (r"\bmysql_\w+\b", "Deprecated mysql_* functions - use mysqli or PDO"),
+        (r'\bereg\(', "ereg() found - use preg_match()"),
+        (r'\beregi\(', "eregi() found - use preg_match()"),
+        (r'\bsplit\(', "split() found - use explode() or preg_split()"),
+        (r'\bsession_register\b', "session_register() found - use $_SESSION"),
+        (r"\bvar\s+\$\w+", "PHP4-style 'var' property - use public/protected/private"),
+        (r'\bmagic_quotes\b', "magic_quotes found - removed in PHP 5.4+"),
+        (r'\bcreate_function\b', "create_function() found - use anonymous functions"),
+        (r'\bmcrypt_\w+\b', "mcrypt_* found - use openssl or sodium"),
+        (r'\beach\(', "each() found - use foreach loop"),
+    ]
+    for pattern, msg in php_checks:
+        if re.search(pattern, source):
+            issues.append(msg)
     return {"issues": issues}
 
 def migrate_php(source):
@@ -228,66 +292,24 @@ def migrate_php(source):
         changes.append("var -> public")
     return {"migrated_code": migrated, "changes": changes}
 
-# ---------- JAVA ----------
-def analyze_java(source):
-    issues = []
-    if re.search(r"\bStringBuffer\b", source):
-        issues.append("StringBuffer found - use StringBuilder")
-    if re.search(r"\bnew\s+Integer\s*\(", source):
-        issues.append("new Integer() found - use Integer.valueOf()")
-    if re.search(r"\bnew\s+Boolean\s*\(", source):
-        issues.append("new Boolean() found - use Boolean.valueOf()")
-    if re.search(r"\bnew\s+Double\s*\(", source):
-        issues.append("new Double() found - use Double.valueOf()")
-    if re.search(r"\bnew\s+Long\s*\(", source):
-        issues.append("new Long() found - use Long.valueOf()")
-    if re.search(r"\bSystem\.out\.println\b", source):
-        issues.append("System.out.println - consider a logging framework")
-    if re.search(r"\b(Vector|Hashtable)\b", source):
-        issues.append("Vector/Hashtable found - use ArrayList/HashMap")
-    if re.search(r"\bEnumeration\b", source):
-        issues.append("Enumeration found - use Iterator")
-    if '.stop()' in source or '.suspend()' in source:
-        issues.append("Thread.stop()/suspend() found - deprecated and unsafe")
-    return {"issues": issues}
-
-def migrate_java(source):
-    changes = []
-    migrated = source
-    rules = [
-        (r'\bStringBuffer\b', 'StringBuilder', "StringBuffer -> StringBuilder"),
-        (r'\bnew\s+Integer\(', 'Integer.valueOf(', "new Integer() -> Integer.valueOf()"),
-        (r'\bnew\s+Boolean\(', 'Boolean.valueOf(', "new Boolean() -> Boolean.valueOf()"),
-        (r'\bnew\s+Double\(', 'Double.valueOf(', "new Double() -> Double.valueOf()"),
-        (r'\bnew\s+Long\(', 'Long.valueOf(', "new Long() -> Long.valueOf()"),
-        (r'\bVector\b', 'ArrayList', "Vector -> ArrayList"),
-        (r'\bHashtable\b', 'HashMap', "Hashtable -> HashMap"),
-    ]
-    for pattern, repl, label in rules:
-        if re.search(pattern, migrated):
-            migrated = re.sub(pattern, repl, migrated)
-            changes.append(label)
-    return {"migrated_code": migrated, "changes": changes}
-
 # ---------- COBOL ----------
 def analyze_cobol(source):
     issues = []
-    if 'PERFORM' in source:
-        issues.append("PERFORM found - convert to functions")
-    if 'GOTO' in source or 'GO TO' in source:
-        issues.append("GOTO found - use structured programming")
-    if 'PIC 9' in source:
-        issues.append("PIC 9 numeric fields - convert to int/float")
-    if 'PIC X' in source:
-        issues.append("PIC X string fields - convert to str")
-    if 'MOVE' in source:
-        issues.append("MOVE statement - use Python assignment")
-    if 'COMPUTE' in source:
-        issues.append("COMPUTE found - use Python arithmetic")
-    if 'ACCEPT' in source:
-        issues.append("ACCEPT found - use input()")
-    if 'STOP RUN' in source:
-        issues.append("STOP RUN found - use return/exit")
+    cobol_checks = [
+        ('PERFORM', "PERFORM found - convert to functions"),
+        ('GOTO', "GOTO found - use structured programming"),
+        ('GO TO', "GO TO found - use structured programming"),
+        ('PIC 9', "PIC 9 numeric fields - convert to int/float"),
+        ('PIC X', "PIC X string fields - convert to str"),
+        ('MOVE', "MOVE statement - use Python assignment"),
+        ('COMPUTE', "COMPUTE found - use Python arithmetic"),
+        ('ACCEPT', "ACCEPT found - use input()"),
+        ('STOP RUN', "STOP RUN found - use return/exit"),
+        ('REDEFINES', "REDEFINES found - needs manual review"),
+    ]
+    for pattern, msg in cobol_checks:
+        if pattern in source:
+            issues.append(msg)
     return {"issues": issues}
 
 def migrate_cobol(source):
