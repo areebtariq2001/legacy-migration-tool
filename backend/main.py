@@ -95,6 +95,31 @@ def call_groq(prompt, max_tokens=500):
     except Exception as e:
         return f"AI service error: {str(e)}"
 
+# ---------- WHY EXPLANATIONS (sir's suggestion) ----------
+WHY_RULES = [
+    ("xrange", "xrange() was removed in Python 3. range() now returns an efficient iterator, so xrange() is no longer needed."),
+    ("raw_input", "raw_input() was renamed to input() in Python 3. The old Python 3-style input() (which evaluated code) was removed for safety."),
+    ("has_key", "dict.has_key() was removed in Python 3. The 'in' operator is the standard, faster way to check for a key."),
+    ("iteritems", "iteritems() was removed in Python 3. items() now returns an efficient view object, so the iter* methods are gone."),
+    ("itervalues", "itervalues() was removed in Python 3. values() now returns an efficient view object."),
+    ("iterkeys", "iterkeys() was removed in Python 3. keys() now returns an efficient view object."),
+    ("unicode", "The unicode type was merged into str in Python 3, since all strings are now Unicode by default."),
+    ("basestring", "basestring was removed in Python 3 because there is now a single str type for text."),
+    ("urllib2", "urllib2 was reorganized into urllib.request and urllib.error in Python 3."),
+    ("cPickle", "cPickle was merged into the pickle module in Python 3; pickle now uses the fast C version automatically."),
+    ("<>", "The <> inequality operator was removed in Python 3. Use != instead."),
+    ("except", "Python 3 requires the 'except Exception as e' syntax. The old comma form 'except Exception, e' was removed."),
+]
+
+def get_why_explanations(original_source):
+    explanations = []
+    if "print " in original_source and not "print(" in original_source.split("print ")[0][-5:]:
+        explanations.append({"change": "print statement -> print()", "why": "In Python 3, print is a function, not a statement. It must be called with parentheses, e.g. print(x)."})
+    for keyword, reason in WHY_RULES:
+        if keyword in original_source:
+            explanations.append({"change": keyword, "why": reason})
+    return explanations
+
 # ---------- PYTHON ----------
 def analyze_code(source):
     try:
@@ -187,7 +212,7 @@ def migrate_code(source):
     if re.search(r'except\s+(\w+)\s*,\s*(\w+)', migrated):
         migrated = re.sub(r'except\s+(\w+)\s*,\s*(\w+)', r'except \1 as \2', migrated)
         changes.append("except X, e -> except X as e")
-    return {"migrated_code": migrated, "changes": changes}
+    return {"migrated_code": migrated, "changes": changes, "why_explanations": get_why_explanations(source)}
 
 # ---------- VALIDATOR (syntax check) ----------
 def validate_python(code):
@@ -229,23 +254,19 @@ def check_variable_integrity(original, migrated):
         return {"vars_ok": False, "var_message": "Warning: AI may have renamed or removed these names: " + ", ".join(sorted(real_missing)) + ". Review required."}
     return {"vars_ok": True, "var_message": "All original variable names preserved."}
 
-# ---------- CONFIDENCE SCORE (NEW) ----------
+# ---------- CONFIDENCE SCORE ----------
 def calculate_confidence(source, migrated, valid, vars_ok):
     score = 100
     reasons = []
-    # 1. Syntax validity (most important): -50 if broken
     if not valid:
         score -= 50
         reasons.append("output has a syntax error")
-    # 2. Variable integrity: -25 if AI changed names
     if not vars_ok:
         score -= 25
         reasons.append("variable names may have changed")
-    # 3. AI error message in output: -40
     if "AI service error" in migrated or migrated.strip() == "":
         score -= 40
         reasons.append("AI did not return usable output")
-    # 4. Length sanity: if output is much shorter than input, AI may have dropped code
     if len(source.strip()) > 0:
         ratio = len(migrated.strip()) / len(source.strip())
         if ratio < 0.5:
@@ -262,7 +283,7 @@ def calculate_confidence(source, migrated, valid, vars_ok):
     reason_text = "; ".join(reasons) if reasons else "all checks passed"
     return {"confidence_score": score, "confidence_level": level, "confidence_reason": reason_text}
 
-# ---------- AI ADVANCED MIGRATION (STRICT + VALIDATION + VAR CHECK + CONFIDENCE) ----------
+# ---------- AI ADVANCED MIGRATION ----------
 def ai_advanced_migrate(source, language):
     prompt = (
         f"You are an expert {language} developer. "
@@ -286,6 +307,7 @@ def ai_advanced_migrate(source, language):
         output["var_message"] = var_check["var_message"]
         conf = calculate_confidence(source, cleaned, output["valid"], output["vars_ok"])
         output.update(conf)
+        output["why_explanations"] = get_why_explanations(source)
     return output
 
 # ---------- PHP ----------
