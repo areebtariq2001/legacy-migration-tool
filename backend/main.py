@@ -141,27 +141,16 @@ def check_dependencies(source):
             deps.append(note)
     return deps
 
-# ---------- DEEP VERIFICATION (Stage 3 step: compile-level check) ----------
+# ---------- DEEP VERIFICATION ----------
 def deep_verify_python(code):
-    # Step 1: syntax parse
     try:
         ast.parse(code)
     except SyntaxError as e:
         return {"verified": False, "verify_message": f"Compilation failed: syntax error on line {e.lineno}. Code is not execution-ready."}
-    # Step 2: compile to bytecode (catches more than parsing alone)
     try:
         compile(code, "<migrated>", "exec")
     except Exception as e:
         return {"verified": False, "verify_message": f"Compilation failed: {str(e)}. Code is not execution-ready."}
-    # Step 3: check for obviously undefined names at module level (best-effort, safe static check)
-    try:
-        tree = ast.parse(code)
-        defined = set(dir(__builtins__)) if isinstance(__builtins__, dict) else set(dir(__builtins__))
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.Import, ast.ImportFrom, ast.Assign)):
-                pass  # names get defined; deep scope analysis is out of scope for this safe check
-    except Exception:
-        pass
     return {"verified": True, "verify_message": "Code compiles successfully and is execution-ready (compile-level verification passed)."}
 
 # ---------- PYTHON ----------
@@ -258,7 +247,7 @@ def migrate_code(source):
         changes.append("except X, e -> except X as e")
     return {"migrated_code": migrated, "changes": changes, "why_explanations": get_why_explanations(source), "dependencies": check_dependencies(source)}
 
-# ---------- VALIDATOR (syntax check) ----------
+# ---------- VALIDATOR ----------
 def validate_python(code):
     try:
         ast.parse(code)
@@ -334,16 +323,16 @@ def calculate_confidence(source, migrated, valid, vars_ok, verified):
 def ai_advanced_migrate(source, language):
     prompt = (
         f"You are an expert {language} developer. "
-        f"Convert this legacy {language} code to {language} 3. "
-        f"ONLY fix syntax that is strictly required for {language} 3 compatibility. "
+        f"Convert this legacy {language} code to modern {language}. "
+        f"ONLY fix syntax and APIs that are strictly required for modern {language} compatibility. "
         f"Do NOT rename any variables, functions, or classes. "
         f"Do NOT add or remove comments. Do NOT change formatting, logic, or style. "
-        f"Keep everything exactly the same except the required syntax fixes. "
+        f"Keep everything exactly the same except the required fixes. "
         f"Return ONLY the converted code, no explanations, no markdown.\n\n"
         f"Legacy code:\n{source}"
     )
     result = call_groq(prompt, max_tokens=2000)
-    cleaned = result.replace("```python", "").replace("```", "").strip()
+    cleaned = result.replace(f"```{language}", "").replace("```python", "").replace("```java", "").replace("```php", "").replace("```", "").strip()
     output = {"migrated_code": cleaned, "ai_powered": True}
     if language == "python":
         check = validate_python(cleaned)
@@ -359,6 +348,10 @@ def ai_advanced_migrate(source, language):
         output.update(conf)
         output["why_explanations"] = get_why_explanations(source)
         output["dependencies"] = check_dependencies(source)
+    else:
+        # Java/PHP/COBOL: full AST guardrails not yet available -> show honest experimental warning
+        output["experimental"] = True
+        output["experimental_message"] = f"AI migration for {language.upper()} is experimental and has no automated guardrails yet. For reliable results, use the rule-based Migrate mode. Always review carefully."
     return output
 
 # ---------- PHP ----------
@@ -375,6 +368,7 @@ def analyze_php(source):
         (r'\bcreate_function\b', "create_function() found - use anonymous functions"),
         (r'\bmcrypt_\w+\b', "mcrypt_* found - use openssl or sodium"),
         (r'\beach\(', "each() found - use foreach loop"),
+        (r'\bsplit\b', "split() found - use explode()"),
     ]
     for pattern, msg in php_checks:
         if re.search(pattern, source):
@@ -390,13 +384,17 @@ def migrate_php(source):
         (r'\bmysql_fetch_array\b', 'mysqli_fetch_array', "mysql_fetch_array -> mysqli_fetch_array"),
         (r'\bmysql_fetch_assoc\b', 'mysqli_fetch_assoc', "mysql_fetch_assoc -> mysqli_fetch_assoc"),
         (r'\bmysql_fetch_row\b', 'mysqli_fetch_row', "mysql_fetch_row -> mysqli_fetch_row"),
+        (r'\bmysql_fetch_object\b', 'mysqli_fetch_object', "mysql_fetch_object -> mysqli_fetch_object"),
         (r'\bmysql_num_rows\b', 'mysqli_num_rows', "mysql_num_rows -> mysqli_num_rows"),
         (r'\bmysql_close\b', 'mysqli_close', "mysql_close -> mysqli_close"),
         (r'\bmysql_error\b', 'mysqli_error', "mysql_error -> mysqli_error"),
+        (r'\bmysql_insert_id\b', 'mysqli_insert_id', "mysql_insert_id -> mysqli_insert_id"),
         (r'\bmysql_real_escape_string\b', 'mysqli_real_escape_string', "mysql_real_escape_string -> mysqli_real_escape_string"),
+        (r'\bereg_replace\(', 'preg_replace(', "ereg_replace() -> preg_replace()"),
         (r'\bereg\(', 'preg_match(', "ereg() -> preg_match()"),
         (r'\beregi\(', 'preg_match(', "eregi() -> preg_match()"),
         (r'\bsplit\(', 'explode(', "split() -> explode()"),
+        (r'\bcreate_function\b', '/* use anonymous function */ function', "create_function -> anonymous function"),
     ]
     for pattern, repl, label in rules:
         if re.search(pattern, migrated):
@@ -416,6 +414,8 @@ def analyze_java(source):
         (r"\bnew\s+Boolean\s*\(", "new Boolean() found - use Boolean.valueOf()"),
         (r"\bnew\s+Double\s*\(", "new Double() found - use Double.valueOf()"),
         (r"\bnew\s+Long\s*\(", "new Long() found - use Long.valueOf()"),
+        (r"\bnew\s+Float\s*\(", "new Float() found - use Float.valueOf()"),
+        (r"\bnew\s+Character\s*\(", "new Character() found - use Character.valueOf()"),
         (r"\bVector\b", "Vector found - use ArrayList"),
         (r"\bHashtable\b", "Hashtable found - use HashMap"),
         (r"\bEnumeration\b", "Enumeration found - use Iterator"),
@@ -430,11 +430,13 @@ def migrate_java(source):
     changes = []
     migrated = source
     rules = [
-        (r'\bStringBuffer\b', 'StringBuilder', "StringBuffer -> StringBuilder"),
         (r'\bnew\s+Integer\(', 'Integer.valueOf(', "new Integer() -> Integer.valueOf()"),
         (r'\bnew\s+Boolean\(', 'Boolean.valueOf(', "new Boolean() -> Boolean.valueOf()"),
         (r'\bnew\s+Double\(', 'Double.valueOf(', "new Double() -> Double.valueOf()"),
         (r'\bnew\s+Long\(', 'Long.valueOf(', "new Long() -> Long.valueOf()"),
+        (r'\bnew\s+Float\(', 'Float.valueOf(', "new Float() -> Float.valueOf()"),
+        (r'\bnew\s+Character\(', 'Character.valueOf(', "new Character() -> Character.valueOf()"),
+        (r'\bStringBuffer\b', 'StringBuilder', "StringBuffer -> StringBuilder"),
         (r'\bVector\b', 'ArrayList', "Vector -> ArrayList"),
         (r'\bHashtable\b', 'HashMap', "Hashtable -> HashMap"),
         (r'\bEnumeration\b', 'Iterator', "Enumeration -> Iterator"),
