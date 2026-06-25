@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/legacy-tool/static/css/main.e6c13ad2.css",
-    "main.js": "/legacy-tool/static/js/main.cc97a89c.js",
+    "main.js": "/legacy-tool/static/js/main.2a1315a9.js",
     "static/js/762.0625b9af.chunk.js": "/legacy-tool/static/js/762.0625b9af.chunk.js",
     "static/js/239.e39fb35b.chunk.js": "/legacy-tool/static/js/239.e39fb35b.chunk.js",
     "static/js/977.459ae33c.chunk.js": "/legacy-tool/static/js/977.459ae33c.chunk.js",
@@ -9,7 +9,7 @@
     "static/js/488.fdd3695e.chunk.js": "/legacy-tool/static/js/488.fdd3695e.chunk.js",
     "index.html": "/legacy-tool/index.html",
     "main.e6c13ad2.css.map": "/legacy-tool/static/css/main.e6c13ad2.css.map",
-    "main.cc97a89c.js.map": "/legacy-tool/static/js/main.cc97a89c.js.map",
+    "main.2a1315a9.js.map": "/legacy-tool/static/js/main.2a1315a9.js.map",
     "762.0625b9af.chunk.js.map": "/legacy-tool/static/js/762.0625b9af.chunk.js.map",
     "239.e39fb35b.chunk.js.map": "/legacy-tool/static/js/239.e39fb35b.chunk.js.map",
     "977.459ae33c.chunk.js.map": "/legacy-tool/static/js/977.459ae33c.chunk.js.map",
@@ -18,6 +18,6 @@
   },
   "entrypoints": [
     "static/css/main.e6c13ad2.css",
-    "static/js/main.cc97a89c.js"
+    "static/js/main.2a1315a9.js"
   ]
 }
