@@ -189,17 +189,19 @@ def migrate_code(source):
         changes.append("except X, e -> except X as e")
     return {"migrated_code": migrated, "changes": changes}
 
-# ---------- AI ADVANCED MIGRATION (NEW) ----------
+# ---------- AI ADVANCED MIGRATION (STRICT PROMPT) ----------
 def ai_advanced_migrate(source, language):
     prompt = (
-        f"You are an expert {language} developer specializing in code modernization. "
-        f"Convert the following legacy {language} code to modern, clean {language} 3 code. "
-        f"Apply all current best practices, fix deprecated syntax, and keep the logic exactly the same. "
-        f"Return ONLY the converted code with no explanations, no markdown, no comments about changes.\n\n"
+        f"You are an expert {language} developer. "
+        f"Convert this legacy {language} code to {language} 3. "
+        f"ONLY fix syntax that is strictly required for {language} 3 compatibility. "
+        f"Do NOT rename any variables, functions, or classes. "
+        f"Do NOT add or remove comments. Do NOT change formatting, logic, or style. "
+        f"Keep everything exactly the same except the required syntax fixes. "
+        f"Return ONLY the converted code, no explanations, no markdown.\n\n"
         f"Legacy code:\n{source}"
     )
     result = call_groq(prompt, max_tokens=2000)
-    # remove markdown code fences if AI adds them
     cleaned = result.replace("```python", "").replace("```", "").strip()
     return {"migrated_code": cleaned, "ai_powered": True}
 
