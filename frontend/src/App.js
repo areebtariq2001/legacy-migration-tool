@@ -178,7 +178,7 @@ View API
 {[
 ["Deterministic Migration","Rule-based conversions that produce the exact same output every run."],
 ["AI + Confidence Score","AI modernizes your file, with validation, variable checks, and a confidence score for every result."],
-["AI Explain Mode","Understand legacy code with plain-language explanations."],
+["Batch Summary","Process many files at once and get an overview of which are safe and which need review."],
 ["Test Generator","Auto-generate unit tests to verify migrated code."],
 ["Diff Viewer","Review every change side by side before you commit."],
 ["Audit Dashboard","Every action logged with a timestamp."]
@@ -355,6 +355,15 @@ setTimeout(()=>setCopied(prev=>({...prev,[idx]:false})),2000);
 const totalIssues=results.reduce((acc,r)=>acc+(r.issues?r.issues.length:0),0);
 const totalChanges=results.reduce((acc,r)=>acc+(r.changes?r.changes.length:0),0);
 const migratedCount=results.filter(r=>r.migrated_code).length;
+
+// Batch summary (AI Migrate confidence scores)
+const scored=results.filter(r=>r.confidence_score!==undefined);
+const highCount=scored.filter(r=>r.confidence_score>=90).length;
+const medCount=scored.filter(r=>r.confidence_score>=60&&r.confidence_score<90).length;
+const lowCount=scored.filter(r=>r.confidence_score<60).length;
+const avgScore=scored.length>0?Math.round(scored.reduce((a,r)=>a+r.confidence_score,0)/scored.length):0;
+const reviewFiles=scored.filter(r=>r.confidence_score<90).map(r=>r.filename);
+
 const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
 const modes=[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["aimigrate","AI Migrate","#a78bfa"],["ai","AI Suggest","#f59e0b"],["explain","Explain","#38bdf8"],["tests","Gen Tests","#ec4899"]];
@@ -418,6 +427,24 @@ Click to select files (multiple allowed)
 </div>
 {results.length>0&&(
 <div>
+{scored.length>0&&(
+<div style={{background:"linear-gradient(135deg,rgba(167,139,250,0.12),rgba(56,189,248,0.06))",border:"1px solid rgba(167,139,250,0.3)",borderRadius:"12px",padding:"20px",marginBottom:"16px"}}>
+<h3 style={{color:"#a78bfa",margin:"0 0 12px 0",fontSize:"16px"}}>Batch Migration Summary</h3>
+<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px",marginBottom:"12px"}}>
+<div style={{textAlign:"center"}}><div style={{fontSize:"22px",fontWeight:"700",color:text}}>{scored.length}</div><div style={{fontSize:"11px",color:subtext}}>Files Migrated</div></div>
+<div style={{textAlign:"center"}}><div style={{fontSize:"22px",fontWeight:"700",color:"#4ade80"}}>{highCount}</div><div style={{fontSize:"11px",color:subtext}}>High Confidence</div></div>
+<div style={{textAlign:"center"}}><div style={{fontSize:"22px",fontWeight:"700",color:"#f59e0b"}}>{medCount}</div><div style={{fontSize:"11px",color:subtext}}>Need Review</div></div>
+<div style={{textAlign:"center"}}><div style={{fontSize:"22px",fontWeight:"700",color:"#f87171"}}>{lowCount}</div><div style={{fontSize:"11px",color:subtext}}>Low Confidence</div></div>
+</div>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"1px solid rgba(255,255,255,0.1)",paddingTop:"12px"}}>
+<span style={{color:subtext,fontSize:"13px"}}>Average confidence</span>
+<span style={{color:confColor(avgScore),fontSize:"18px",fontWeight:"700"}}>{avgScore}%</span>
+</div>
+{reviewFiles.length>0&&(
+<p style={{color:subtext,fontSize:"12px",margin:"10px 0 0 0"}}>Flagged for manual review: {reviewFiles.join(", ")}</p>
+)}
+</div>
+)}
 <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"12px",marginBottom:"16px"}}>
 <div style={{background:"rgba(56,189,248,0.1)",border:"1px solid #38bdf8",borderRadius:"12px",padding:"16px",textAlign:"center"}}>
 <div style={{fontSize:"24px",fontWeight:"700",color:"#38bdf8"}}>{results.length}</div>
