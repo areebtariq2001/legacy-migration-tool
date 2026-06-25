@@ -69,7 +69,7 @@ def track_usage(action, filename):
     stats["logs"] = stats["logs"][:50]
     save_stats(stats)
 
-def call_groq(prompt):
+def call_groq(prompt, max_tokens=500):
     GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
     try:
         headers = {
@@ -79,13 +79,13 @@ def call_groq(prompt):
         payload = {
             "model": "llama-3.1-8b-instant",
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 500
+            "max_tokens": max_tokens
         }
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers=headers,
             json=payload,
-            timeout=30
+            timeout=60
         )
         result = response.json()
         if "choices" in result:
@@ -189,57 +189,19 @@ def migrate_code(source):
         changes.append("except X, e -> except X as e")
     return {"migrated_code": migrated, "changes": changes}
 
-# ---------- JAVA ----------
-def analyze_java(source):
-    issues = []
-    java_checks = [
-        (r"\bStringBuffer\b", "StringBuffer found - use StringBuilder"),
-        (r"\bnew\s+Integer\s*\(", "new Integer() found - use Integer.valueOf()"),
-        (r"\bnew\s+Boolean\s*\(", "new Boolean() found - use Boolean.valueOf()"),
-        (r"\bnew\s+Double\s*\(", "new Double() found - use Double.valueOf()"),
-        (r"\bnew\s+Long\s*\(", "new Long() found - use Long.valueOf()"),
-        (r"\bnew\s+Float\s*\(", "new Float() found - use Float.valueOf()"),
-        (r"\bnew\s+Character\s*\(", "new Character() found - use Character.valueOf()"),
-        (r"\bnew\s+Short\s*\(", "new Short() found - use Short.valueOf()"),
-        (r"\bnew\s+Byte\s*\(", "new Byte() found - use Byte.valueOf()"),
-        (r"\bVector\b", "Vector found - use ArrayList"),
-        (r"\bHashtable\b", "Hashtable found - use HashMap"),
-        (r"\bEnumeration\b", "Enumeration found - use Iterator"),
-        (r"\bStringTokenizer\b", "StringTokenizer found - use String.split()"),
-        (r"\.stop\(\)", "Thread.stop() found - deprecated and unsafe"),
-        (r"\.suspend\(\)", "Thread.suspend() found - deprecated and unsafe"),
-        (r"\.resume\(\)", "Thread.resume() found - deprecated and unsafe"),
-        (r"\bSystem\.out\.println\b", "System.out.println - consider a logging framework"),
-        (r"\bprintStackTrace\(\)", "printStackTrace() found - use a logger"),
-        (r"\b\.finalize\(\)", "finalize() found - deprecated, use try-with-resources"),
-    ]
-    for pattern, msg in java_checks:
-        if re.search(pattern, source):
-            issues.append(msg)
-    return {"issues": issues}
-
-def migrate_java(source):
-    changes = []
-    migrated = source
-    rules = [
-        (r'\bStringBuffer\b', 'StringBuilder', "StringBuffer -> StringBuilder"),
-        (r'\bnew\s+Integer\(', 'Integer.valueOf(', "new Integer() -> Integer.valueOf()"),
-        (r'\bnew\s+Boolean\(', 'Boolean.valueOf(', "new Boolean() -> Boolean.valueOf()"),
-        (r'\bnew\s+Double\(', 'Double.valueOf(', "new Double() -> Double.valueOf()"),
-        (r'\bnew\s+Long\(', 'Long.valueOf(', "new Long() -> Long.valueOf()"),
-        (r'\bnew\s+Float\(', 'Float.valueOf(', "new Float() -> Float.valueOf()"),
-        (r'\bnew\s+Character\(', 'Character.valueOf(', "new Character() -> Character.valueOf()"),
-        (r'\bnew\s+Short\(', 'Short.valueOf(', "new Short() -> Short.valueOf()"),
-        (r'\bnew\s+Byte\(', 'Byte.valueOf(', "new Byte() -> Byte.valueOf()"),
-        (r'\bVector\b', 'ArrayList', "Vector -> ArrayList"),
-        (r'\bHashtable\b', 'HashMap', "Hashtable -> HashMap"),
-        (r'\bEnumeration\b', 'Iterator', "Enumeration -> Iterator"),
-    ]
-    for pattern, repl, label in rules:
-        if re.search(pattern, migrated):
-            migrated = re.sub(pattern, repl, migrated)
-            changes.append(label)
-    return {"migrated_code": migrated, "changes": changes}
+# ---------- AI ADVANCED MIGRATION (NEW) ----------
+def ai_advanced_migrate(source, language):
+    prompt = (
+        f"You are an expert {language} developer specializing in code modernization. "
+        f"Convert the following legacy {language} code to modern, clean {language} 3 code. "
+        f"Apply all current best practices, fix deprecated syntax, and keep the logic exactly the same. "
+        f"Return ONLY the converted code with no explanations, no markdown, no comments about changes.\n\n"
+        f"Legacy code:\n{source}"
+    )
+    result = call_groq(prompt, max_tokens=2000)
+    # remove markdown code fences if AI adds them
+    cleaned = result.replace("```python", "").replace("```", "").strip()
+    return {"migrated_code": cleaned, "ai_powered": True}
 
 # ---------- PHP ----------
 def analyze_php(source):
@@ -248,22 +210,13 @@ def analyze_php(source):
         (r"\bmysql_\w+\b", "Deprecated mysql_* functions - use mysqli or PDO"),
         (r'\bereg\(', "ereg() found - use preg_match()"),
         (r'\beregi\(', "eregi() found - use preg_match()"),
-        (r'\bereg_replace\(', "ereg_replace() found - use preg_replace()"),
         (r'\bsplit\(', "split() found - use explode() or preg_split()"),
-        (r'\bspliti\(', "spliti() found - use preg_split()"),
         (r'\bsession_register\b', "session_register() found - use $_SESSION"),
-        (r'\bsession_unregister\b', "session_unregister() found - use unset($_SESSION[...])"),
-        (r'\bsession_is_registered\b', "session_is_registered() found - use isset($_SESSION[...])"),
         (r"\bvar\s+\$\w+", "PHP4-style 'var' property - use public/protected/private"),
         (r'\bmagic_quotes\b', "magic_quotes found - removed in PHP 5.4+"),
         (r'\bcreate_function\b', "create_function() found - use anonymous functions"),
         (r'\bmcrypt_\w+\b', "mcrypt_* found - use openssl or sodium"),
         (r'\beach\(', "each() found - use foreach loop"),
-        (r'\bset_magic_quotes_runtime\b', "set_magic_quotes_runtime() found - removed"),
-        (r'\bcall_user_method\b', "call_user_method() found - use call_user_func()"),
-        (r'\bis_dst\b', "is_dst parameter found - removed from date functions"),
-        (r'\bmoney_format\b', "money_format() found - use NumberFormatter"),
-        (r'\bgmp_random\b', "gmp_random() found - use gmp_random_bits()"),
     ]
     for pattern, msg in php_checks:
         if re.search(pattern, source):
@@ -279,20 +232,13 @@ def migrate_php(source):
         (r'\bmysql_fetch_array\b', 'mysqli_fetch_array', "mysql_fetch_array -> mysqli_fetch_array"),
         (r'\bmysql_fetch_assoc\b', 'mysqli_fetch_assoc', "mysql_fetch_assoc -> mysqli_fetch_assoc"),
         (r'\bmysql_fetch_row\b', 'mysqli_fetch_row', "mysql_fetch_row -> mysqli_fetch_row"),
-        (r'\bmysql_fetch_object\b', 'mysqli_fetch_object', "mysql_fetch_object -> mysqli_fetch_object"),
         (r'\bmysql_num_rows\b', 'mysqli_num_rows', "mysql_num_rows -> mysqli_num_rows"),
-        (r'\bmysql_num_fields\b', 'mysqli_num_fields', "mysql_num_fields -> mysqli_num_fields"),
-        (r'\bmysql_insert_id\b', 'mysqli_insert_id', "mysql_insert_id -> mysqli_insert_id"),
         (r'\bmysql_close\b', 'mysqli_close', "mysql_close -> mysqli_close"),
         (r'\bmysql_error\b', 'mysqli_error', "mysql_error -> mysqli_error"),
-        (r'\bmysql_affected_rows\b', 'mysqli_affected_rows', "mysql_affected_rows -> mysqli_affected_rows"),
         (r'\bmysql_real_escape_string\b', 'mysqli_real_escape_string', "mysql_real_escape_string -> mysqli_real_escape_string"),
         (r'\bereg\(', 'preg_match(', "ereg() -> preg_match()"),
         (r'\beregi\(', 'preg_match(', "eregi() -> preg_match()"),
-        (r'\bereg_replace\(', 'preg_replace(', "ereg_replace() -> preg_replace()"),
         (r'\bsplit\(', 'explode(', "split() -> explode()"),
-        (r'\bspliti\(', 'preg_split(', "spliti() -> preg_split()"),
-        (r'\bcall_user_method\(', 'call_user_func(', "call_user_method() -> call_user_func()"),
     ]
     for pattern, repl, label in rules:
         if re.search(pattern, migrated):
@@ -303,25 +249,56 @@ def migrate_php(source):
         changes.append("var -> public")
     return {"migrated_code": migrated, "changes": changes}
 
+# ---------- JAVA ----------
+def analyze_java(source):
+    issues = []
+    java_checks = [
+        (r"\bStringBuffer\b", "StringBuffer found - use StringBuilder"),
+        (r"\bnew\s+Integer\s*\(", "new Integer() found - use Integer.valueOf()"),
+        (r"\bnew\s+Boolean\s*\(", "new Boolean() found - use Boolean.valueOf()"),
+        (r"\bnew\s+Double\s*\(", "new Double() found - use Double.valueOf()"),
+        (r"\bnew\s+Long\s*\(", "new Long() found - use Long.valueOf()"),
+        (r"\bVector\b", "Vector found - use ArrayList"),
+        (r"\bHashtable\b", "Hashtable found - use HashMap"),
+        (r"\bEnumeration\b", "Enumeration found - use Iterator"),
+        (r"\bSystem\.out\.println\b", "System.out.println - consider a logging framework"),
+    ]
+    for pattern, msg in java_checks:
+        if re.search(pattern, source):
+            issues.append(msg)
+    return {"issues": issues}
+
+def migrate_java(source):
+    changes = []
+    migrated = source
+    rules = [
+        (r'\bStringBuffer\b', 'StringBuilder', "StringBuffer -> StringBuilder"),
+        (r'\bnew\s+Integer\(', 'Integer.valueOf(', "new Integer() -> Integer.valueOf()"),
+        (r'\bnew\s+Boolean\(', 'Boolean.valueOf(', "new Boolean() -> Boolean.valueOf()"),
+        (r'\bnew\s+Double\(', 'Double.valueOf(', "new Double() -> Double.valueOf()"),
+        (r'\bnew\s+Long\(', 'Long.valueOf(', "new Long() -> Long.valueOf()"),
+        (r'\bVector\b', 'ArrayList', "Vector -> ArrayList"),
+        (r'\bHashtable\b', 'HashMap', "Hashtable -> HashMap"),
+        (r'\bEnumeration\b', 'Iterator', "Enumeration -> Iterator"),
+    ]
+    for pattern, repl, label in rules:
+        if re.search(pattern, migrated):
+            migrated = re.sub(pattern, repl, migrated)
+            changes.append(label)
+    return {"migrated_code": migrated, "changes": changes}
+
 # ---------- COBOL ----------
 def analyze_cobol(source):
     issues = []
     cobol_checks = [
         ('PERFORM', "PERFORM found - convert to functions/loops"),
         ('GOTO', "GOTO found - use structured programming"),
-        ('GO TO', "GO TO found - use structured programming"),
         ('PIC 9', "PIC 9 numeric fields - convert to int/float"),
         ('PIC X', "PIC X string fields - convert to str"),
         ('MOVE', "MOVE statement - use Python assignment"),
         ('COMPUTE', "COMPUTE found - use Python arithmetic"),
         ('ACCEPT', "ACCEPT found - use input()"),
         ('STOP RUN', "STOP RUN found - use return/exit"),
-        ('REDEFINES', "REDEFINES found - needs manual review"),
-        ('OCCURS', "OCCURS found - convert to Python list"),
-        ('COPY ', "COPY statement found - inline the copybook"),
-        ('CALL ', "CALL found - convert to function call"),
-        ('EVALUATE', "EVALUATE found - use if/elif or match"),
-        ('PERFORM UNTIL', "PERFORM UNTIL found - convert to while loop"),
     ]
     for pattern, msg in cobol_checks:
         if pattern in source:
@@ -341,14 +318,6 @@ def migrate_cobol(source):
         migrated += "\ndef main():\n    pass\n\nif __name__ == '__main__':\n    main()\n"
     if 'DISPLAY' in source:
         changes.append("DISPLAY -> print()")
-    if 'ACCEPT' in source:
-        changes.append("ACCEPT -> input()")
-    if 'STOP RUN' in source:
-        changes.append("STOP RUN -> return")
-    if 'PERFORM UNTIL' in source:
-        changes.append("PERFORM UNTIL -> while loop")
-    if 'EVALUATE' in source:
-        changes.append("EVALUATE -> if/elif")
     return {"migrated_code": migrated, "changes": changes}
 
 # ---------- AI ----------
@@ -383,6 +352,14 @@ async def migrate(file: UploadFile = File(...)):
     result = migrate_code(source)
     result["filename"] = file.filename
     track_usage("migrate", file.filename)
+    return result
+
+@app.post("/ai-migrate")
+async def ai_migrate_endpoint(file: UploadFile = File(...)):
+    source = (await file.read()).decode("utf-8", errors='ignore')
+    result = ai_advanced_migrate(source, detect_language(file.filename))
+    result["filename"] = file.filename
+    track_usage("ai-migrate", file.filename)
     return result
 
 @app.post("/download")
