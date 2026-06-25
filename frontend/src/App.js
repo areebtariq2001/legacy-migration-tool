@@ -73,7 +73,7 @@ Back to Home
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#a78bfa",fontWeight:"bold"}}>POST /ai-migrate</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI-powered full code modernization</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI-powered full code modernization with validation and variable-integrity guardrails</p>
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-java, /migrate-java, /analyze-php, /migrate-php, /analyze-cobol, /migrate-cobol</p>
@@ -132,13 +132,13 @@ return(
 <div style={{maxWidth:"1100px",margin:"0 auto",padding:"60px 24px 40px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"48px",alignItems:"center"}}>
 <div className="sb-fade">
 <div style={{display:"inline-block",background:"rgba(56,189,248,0.1)",border:"1px solid rgba(56,189,248,0.3)",color:"#38bdf8",padding:"6px 14px",borderRadius:"20px",fontSize:"13px",marginBottom:"24px",fontFamily:"monospace"}}>
-rule-based + AI-powered migration
+rule-based + AI with guardrails
 </div>
 <h1 style={{fontSize:"44px",lineHeight:"1.1",color:"white",marginBottom:"20px",fontWeight:"800"}}>
 Modernize legacy code,<br/><span style={{color:"#38bdf8"}}>predictably.</span>
 </h1>
 <p style={{fontSize:"18px",color:"#94a3b8",marginBottom:"32px",lineHeight:"1.6"}}>
-StarBuild migrates Python, Java, PHP, and COBOL using deterministic rules, plus an AI mode for full code modernization, explanations, and tests.
+StarBuild migrates Python, Java, PHP, and COBOL using deterministic rules, plus an AI mode with syntax validation and variable-integrity checks.
 </p>
 <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
 <button className="sb-btn-primary" onClick={onLaunch} style={{background:"#38bdf8",color:"#0a0e1a",padding:"14px 32px",borderRadius:"10px",fontSize:"16px",fontWeight:"700",border:"none",cursor:"pointer"}}>
@@ -177,7 +177,7 @@ View API
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"20px"}}>
 {[
 ["Deterministic Migration","Rule-based conversions that produce the exact same output every run."],
-["AI Full Migration","AI modernizes your whole file, handling code that fixed rules can't."],
+["AI Migration + Guardrails","AI modernizes your file, with syntax validation and variable-integrity checks to catch unwanted changes."],
 ["AI Explain Mode","Understand legacy code with plain-language explanations."],
 ["Test Generator","Auto-generate unit tests to verify migrated code."],
 ["Diff Viewer","Review every change side by side before you commit."],
@@ -386,7 +386,7 @@ Home
 </div>
 {mode==="aimigrate"&&(
 <div style={{background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.3)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
-<p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>AI Migrate uses AI to modernize your entire file, including complex code that fixed rules cannot handle. Results may take longer and should always be reviewed before use.</p>
+<p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>AI Migrate modernizes your entire file. It runs syntax validation and a variable-integrity check, but results should always be reviewed before use.</p>
 </div>
 )}
 <div style={{border:"2px dashed "+border,borderRadius:"8px",padding:"20px",textAlign:"center",marginBottom:"16px"}}>
@@ -447,6 +447,8 @@ Download PDF Report
 <h4 style={{color:"#38bdf8",margin:"0 0 8px 0"}}>{result.filename}</h4>
 {result.error&&<p style={{color:"#f87171",fontSize:"13px"}}>{result.error}</p>}
 {result.ai_powered&&<p style={{color:"#a78bfa",fontSize:"12px"}}>AI-powered migration — please review carefully before use.</p>}
+{result.validation_message&&<p style={{color:result.valid?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.valid?"✓ ":"⚠ "}{result.validation_message}</p>}
+{result.var_message&&<p style={{color:result.vars_ok?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.vars_ok?"✓ ":"⚠ "}{result.var_message}</p>}
 {result.functions&&result.functions.length>0&&<p style={{fontSize:"13px",color:text}}>Functions: {result.functions.join(", ")}</p>}
 {result.classes&&result.classes.length>0&&<p style={{fontSize:"13px",color:text}}>Classes: {result.classes.join(", ")}</p>}
 {result.imports&&result.imports.length>0&&<p style={{fontSize:"13px",color:text}}>Imports: {result.imports.join(", ")}</p>}
