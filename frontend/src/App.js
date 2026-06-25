@@ -69,7 +69,11 @@ Back to Home
 <h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Endpoints</h2>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze, /migrate</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Python code analysis and migration</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Python code analysis and rule-based migration</p>
+</div>
+<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
+<p style={{color:"#a78bfa",fontWeight:"bold"}}>POST /ai-migrate</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI-powered full code modernization</p>
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-java, /migrate-java, /analyze-php, /migrate-php, /analyze-cobol, /migrate-cobol</p>
@@ -77,25 +81,12 @@ Back to Home
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"24px"}}>
 <p style={{color:"#f59e0b",fontWeight:"bold"}}>POST /ai-suggest, /explain, /generate-tests</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI-powered suggestions, explanations, and test generation</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI suggestions, explanations, and test generation</p>
 </div>
 <h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Example: cURL</h2>
 <div style={codeStyle}>{`curl -X POST \\
   https://legacy-migration-tool-1.onrender.com/migrate \\
   -F "file=@myscript.py"`}</div>
-<h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Example: Python</h2>
-<div style={codeStyle}>{`import requests
-
-url = "https://legacy-migration-tool-1.onrender.com/migrate"
-files = {"file": open("myscript.py", "rb")}
-response = requests.post(url, files=files)
-print(response.json())`}</div>
-<h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Response Format</h2>
-<div style={codeStyle}>{`{
-  "migrated_code": "...",
-  "changes": ["xrange -> range", "raw_input -> input"],
-  "filename": "myscript.py"
-}`}</div>
 <div style={{color:"#64748b",fontSize:"13px",marginTop:"40px",textAlign:"center"}}>2026 StarBuild - API Documentation</div>
 </div>
 </div>
@@ -141,13 +132,13 @@ return(
 <div style={{maxWidth:"1100px",margin:"0 auto",padding:"60px 24px 40px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:"48px",alignItems:"center"}}>
 <div className="sb-fade">
 <div style={{display:"inline-block",background:"rgba(56,189,248,0.1)",border:"1px solid rgba(56,189,248,0.3)",color:"#38bdf8",padding:"6px 14px",borderRadius:"20px",fontSize:"13px",marginBottom:"24px",fontFamily:"monospace"}}>
-rule-based migration + AI assistance
+rule-based + AI-powered migration
 </div>
 <h1 style={{fontSize:"44px",lineHeight:"1.1",color:"white",marginBottom:"20px",fontWeight:"800"}}>
 Modernize legacy code,<br/><span style={{color:"#38bdf8"}}>predictably.</span>
 </h1>
 <p style={{fontSize:"18px",color:"#94a3b8",marginBottom:"32px",lineHeight:"1.6"}}>
-StarBuild migrates Python, Java, PHP, and COBOL using deterministic rules you can trust to run the same way every time, with AI for explanations and tests.
+StarBuild migrates Python, Java, PHP, and COBOL using deterministic rules, plus an AI mode for full code modernization, explanations, and tests.
 </p>
 <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
 <button className="sb-btn-primary" onClick={onLaunch} style={{background:"#38bdf8",color:"#0a0e1a",padding:"14px 32px",borderRadius:"10px",fontSize:"16px",fontWeight:"700",border:"none",cursor:"pointer"}}>
@@ -185,12 +176,12 @@ View API
 <div style={{maxWidth:"1100px",margin:"0 auto",padding:"20px 24px 80px"}}>
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"20px"}}>
 {[
-["Deterministic Migration","Rule-based conversions that produce the exact same output every run \u2014 no surprises."],
-["AI Explain Mode","Understand what legacy code does with plain-language, section-by-section explanations."],
-["Test Generator","Auto-generate unit tests so migrated code can be verified, not just trusted."],
-["Diff Viewer","Review every change side by side before you commit anything."],
-["Batch + ZIP","Process many files at once and download the whole set together."],
-["Audit Dashboard","Every action logged with a timestamp \u2014 built for compliance."]
+["Deterministic Migration","Rule-based conversions that produce the exact same output every run."],
+["AI Full Migration","AI modernizes your whole file, handling code that fixed rules can't."],
+["AI Explain Mode","Understand legacy code with plain-language explanations."],
+["Test Generator","Auto-generate unit tests to verify migrated code."],
+["Diff Viewer","Review every change side by side before you commit."],
+["Audit Dashboard","Every action logged with a timestamp."]
 ].map(([title,desc])=>(
 <div key={title} className="sb-feature" style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"12px",padding:"24px"}}>
 <div style={{color:"#38bdf8",fontSize:"16px",fontWeight:"700",marginBottom:"10px"}}>{title}</div>
@@ -251,6 +242,7 @@ const formData=new FormData();
 formData.append("file",files[i]);
 let endpoint="/analyze";
 if(mode==="ai"){endpoint="/ai-suggest";}
+else if(mode==="aimigrate"){endpoint="/ai-migrate";}
 else if(mode==="explain"){endpoint="/explain";}
 else if(mode==="tests"){endpoint="/generate-tests";}
 else if(language==="python"){endpoint=mode==="analyze"?"/analyze":"/migrate";}
@@ -362,7 +354,7 @@ const totalChanges=results.reduce((acc,r)=>acc+(r.changes?r.changes.length:0),0)
 const migratedCount=results.filter(r=>r.migrated_code).length;
 const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
-const modes=[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["ai","AI Suggest","#f59e0b"],["explain","Explain","#a78bfa"],["tests","Gen Tests","#ec4899"]];
+const modes=[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["aimigrate","AI Migrate","#a78bfa"],["ai","AI Suggest","#f59e0b"],["explain","Explain","#38bdf8"],["tests","Gen Tests","#ec4899"]];
 
 return(
 <div style={{minHeight:"100vh",background:bg,color:text,fontFamily:"Arial",transition:"all 0.3s"}}>
@@ -392,6 +384,11 @@ Home
 </button>
 ))}
 </div>
+{mode==="aimigrate"&&(
+<div style={{background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.3)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
+<p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>AI Migrate uses AI to modernize your entire file, including complex code that fixed rules cannot handle. Results may take longer and should always be reviewed before use.</p>
+</div>
+)}
 <div style={{border:"2px dashed "+border,borderRadius:"8px",padding:"20px",textAlign:"center",marginBottom:"16px"}}>
 <input type="file" multiple accept=".py,.java,.php,.cbl" onChange={e=>setFiles(Array.from(e.target.files))} id="fileInput" style={{display:"none"}}/>
 <label htmlFor="fileInput" style={{cursor:"pointer",color:"#38bdf8"}}>
@@ -411,7 +408,7 @@ Click to select files (multiple allowed)
 </div>
 )}
 <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"12px",borderRadius:"8px",border:"none",background:loading?"#334155":"#38bdf8",color:loading?"#94a3b8":"#0a0e1a",fontWeight:"700",cursor:"pointer"}}>
-{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":mode==="ai"?"Get AI Suggestions":mode==="explain"?"Explain Code":"Generate Tests"}
+{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":mode==="aimigrate"?"AI Migrate (Full)":mode==="ai"?"Get AI Suggestions":mode==="explain"?"Explain Code":"Generate Tests"}
 </button>
 </div>
 {results.length>0&&(
@@ -449,6 +446,7 @@ Download PDF Report
 <div key={idx} style={{background:card,border:"1px solid "+border,borderRadius:"12px",padding:"20px",marginBottom:"12px"}}>
 <h4 style={{color:"#38bdf8",margin:"0 0 8px 0"}}>{result.filename}</h4>
 {result.error&&<p style={{color:"#f87171",fontSize:"13px"}}>{result.error}</p>}
+{result.ai_powered&&<p style={{color:"#a78bfa",fontSize:"12px"}}>AI-powered migration — please review carefully before use.</p>}
 {result.functions&&result.functions.length>0&&<p style={{fontSize:"13px",color:text}}>Functions: {result.functions.join(", ")}</p>}
 {result.classes&&result.classes.length>0&&<p style={{fontSize:"13px",color:text}}>Classes: {result.classes.join(", ")}</p>}
 {result.imports&&result.imports.length>0&&<p style={{fontSize:"13px",color:text}}>Imports: {result.imports.join(", ")}</p>}
@@ -462,7 +460,7 @@ Download PDF Report
 )}
 {result.explanation&&(
 <div style={{marginTop:"8px"}}>
-<p style={{color:"#a78bfa",fontSize:"13px",fontWeight:"bold"}}>Code Explanation:</p>
+<p style={{color:"#38bdf8",fontSize:"13px",fontWeight:"bold"}}>Code Explanation:</p>
 <pre style={{background:codebg,color:text,padding:"12px",borderRadius:"8px",overflow:"auto",fontSize:"11px",maxHeight:"300px",whiteSpace:"pre-wrap"}}>{result.explanation}</pre>
 </div>
 )}
