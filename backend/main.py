@@ -199,7 +199,7 @@ def validate_python(code):
     except Exception as e:
         return {"valid": False, "validation_message": f"Warning: could not verify output ({str(e)}). Please review carefully."}
 
-# ---------- VARIABLE SCOPE MAPPING (sir's guardrail) ----------
+# ---------- VARIABLE SCOPE MAPPING ----------
 def extract_variables(code):
     names = set()
     try:
@@ -207,7 +207,6 @@ def extract_variables(code):
     except:
         return names
     for node in ast.walk(tree):
-        # variables assigned (targets)
         if isinstance(node, ast.Name):
             names.add(node.id)
         elif isinstance(node, ast.FunctionDef):
@@ -219,21 +218,51 @@ def extract_variables(code):
     return names
 
 def check_variable_integrity(original, migrated):
-    # only works if both parse cleanly
     orig_vars = extract_variables(original)
     new_vars = extract_variables(migrated)
     if not orig_vars or not new_vars:
         return {"vars_ok": True, "var_message": ""}
-    # which original names disappeared in the migrated code
     missing = orig_vars - new_vars
-    # ignore Python 2 built-ins that are SUPPOSED to change
     expected_changes = {"xrange", "raw_input", "unicode", "basestring", "iteritems", "itervalues", "iterkeys", "has_key"}
     real_missing = [v for v in missing if v not in expected_changes]
     if real_missing:
         return {"vars_ok": False, "var_message": "Warning: AI may have renamed or removed these names: " + ", ".join(sorted(real_missing)) + ". Review required."}
     return {"vars_ok": True, "var_message": "All original variable names preserved."}
 
-# ---------- AI ADVANCED MIGRATION (STRICT PROMPT + VALIDATION + VAR CHECK) ----------
+# ---------- CONFIDENCE SCORE (NEW) ----------
+def calculate_confidence(source, migrated, valid, vars_ok):
+    score = 100
+    reasons = []
+    # 1. Syntax validity (most important): -50 if broken
+    if not valid:
+        score -= 50
+        reasons.append("output has a syntax error")
+    # 2. Variable integrity: -25 if AI changed names
+    if not vars_ok:
+        score -= 25
+        reasons.append("variable names may have changed")
+    # 3. AI error message in output: -40
+    if "AI service error" in migrated or migrated.strip() == "":
+        score -= 40
+        reasons.append("AI did not return usable output")
+    # 4. Length sanity: if output is much shorter than input, AI may have dropped code
+    if len(source.strip()) > 0:
+        ratio = len(migrated.strip()) / len(source.strip())
+        if ratio < 0.5:
+            score -= 20
+            reasons.append("output is much shorter than input (code may be missing)")
+    if score < 0:
+        score = 0
+    if score >= 90:
+        level = "High confidence"
+    elif score >= 60:
+        level = "Medium confidence - review recommended"
+    else:
+        level = "Low confidence - manual review required"
+    reason_text = "; ".join(reasons) if reasons else "all checks passed"
+    return {"confidence_score": score, "confidence_level": level, "confidence_reason": reason_text}
+
+# ---------- AI ADVANCED MIGRATION (STRICT + VALIDATION + VAR CHECK + CONFIDENCE) ----------
 def ai_advanced_migrate(source, language):
     prompt = (
         f"You are an expert {language} developer. "
@@ -255,6 +284,8 @@ def ai_advanced_migrate(source, language):
         var_check = check_variable_integrity(source, cleaned)
         output["vars_ok"] = var_check["vars_ok"]
         output["var_message"] = var_check["var_message"]
+        conf = calculate_confidence(source, cleaned, output["valid"], output["vars_ok"])
+        output.update(conf)
     return output
 
 # ---------- PHP ----------
