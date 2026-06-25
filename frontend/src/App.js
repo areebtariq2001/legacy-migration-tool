@@ -73,7 +73,7 @@ Back to Home
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#a78bfa",fontWeight:"bold"}}>POST /ai-migrate</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI-powered full code modernization with validation and variable-integrity guardrails</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI-powered migration with validation, variable-integrity checks, and a confidence score</p>
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-java, /migrate-java, /analyze-php, /migrate-php, /analyze-cobol, /migrate-cobol</p>
@@ -138,7 +138,7 @@ rule-based + AI with guardrails
 Modernize legacy code,<br/><span style={{color:"#38bdf8"}}>predictably.</span>
 </h1>
 <p style={{fontSize:"18px",color:"#94a3b8",marginBottom:"32px",lineHeight:"1.6"}}>
-StarBuild migrates Python, Java, PHP, and COBOL using deterministic rules, plus an AI mode with syntax validation and variable-integrity checks.
+StarBuild migrates Python, Java, PHP, and COBOL using deterministic rules, plus an AI mode with validation, variable-integrity checks, and a confidence score.
 </p>
 <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
 <button className="sb-btn-primary" onClick={onLaunch} style={{background:"#38bdf8",color:"#0a0e1a",padding:"14px 32px",borderRadius:"10px",fontSize:"16px",fontWeight:"700",border:"none",cursor:"pointer"}}>
@@ -177,7 +177,7 @@ View API
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"20px"}}>
 {[
 ["Deterministic Migration","Rule-based conversions that produce the exact same output every run."],
-["AI Migration + Guardrails","AI modernizes your file, with syntax validation and variable-integrity checks to catch unwanted changes."],
+["AI + Confidence Score","AI modernizes your file, with validation, variable checks, and a confidence score for every result."],
 ["AI Explain Mode","Understand legacy code with plain-language explanations."],
 ["Test Generator","Auto-generate unit tests to verify migrated code."],
 ["Diff Viewer","Review every change side by side before you commit."],
@@ -322,6 +322,9 @@ doc.text((idx+1)+". "+result.filename,14,y);
 y+=8;
 doc.setFontSize(9);
 doc.setTextColor(0,0,0);
+if(result.confidence_score!==undefined){
+doc.text("Confidence: "+result.confidence_score+"% ("+result.confidence_level+")",14,y);y+=5;
+}
 if(result.issues&&result.issues.length>0){
 doc.text("Issues:",14,y);y+=5;
 result.issues.forEach(issue=>{
@@ -356,6 +359,8 @@ const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
 const modes=[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["aimigrate","AI Migrate","#a78bfa"],["ai","AI Suggest","#f59e0b"],["explain","Explain","#38bdf8"],["tests","Gen Tests","#ec4899"]];
 
+const confColor=(score)=>score>=90?"#4ade80":score>=60?"#f59e0b":"#f87171";
+
 return(
 <div style={{minHeight:"100vh",background:bg,color:text,fontFamily:"Arial",transition:"all 0.3s"}}>
 <div style={{textAlign:"center",padding:"40px 20px",position:"relative"}}>
@@ -386,7 +391,7 @@ Home
 </div>
 {mode==="aimigrate"&&(
 <div style={{background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.3)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
-<p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>AI Migrate modernizes your entire file. It runs syntax validation and a variable-integrity check, but results should always be reviewed before use.</p>
+<p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>AI Migrate modernizes your entire file. It runs syntax validation, a variable-integrity check, and assigns a confidence score. Always review results before use.</p>
 </div>
 )}
 <div style={{border:"2px dashed "+border,borderRadius:"8px",padding:"20px",textAlign:"center",marginBottom:"16px"}}>
@@ -446,6 +451,18 @@ Download PDF Report
 <div key={idx} style={{background:card,border:"1px solid "+border,borderRadius:"12px",padding:"20px",marginBottom:"12px"}}>
 <h4 style={{color:"#38bdf8",margin:"0 0 8px 0"}}>{result.filename}</h4>
 {result.error&&<p style={{color:"#f87171",fontSize:"13px"}}>{result.error}</p>}
+{result.confidence_score!==undefined&&(
+<div style={{background:confColor(result.confidence_score)+"1a",border:"1px solid "+confColor(result.confidence_score),borderRadius:"10px",padding:"14px",marginBottom:"12px"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{color:confColor(result.confidence_score),fontWeight:"700",fontSize:"15px"}}>Migration Confidence: {result.confidence_score}%</span>
+<span style={{color:confColor(result.confidence_score),fontSize:"13px",fontWeight:"600"}}>{result.confidence_level}</span>
+</div>
+<div style={{background:darkMode?"#334155":"#cbd5e1",borderRadius:"6px",height:"8px",marginTop:"8px"}}>
+<div style={{background:confColor(result.confidence_score),borderRadius:"6px",height:"8px",width:result.confidence_score+"%"}}></div>
+</div>
+<p style={{color:subtext,fontSize:"12px",margin:"8px 0 0 0"}}>Checks: {result.confidence_reason}</p>
+</div>
+)}
 {result.ai_powered&&<p style={{color:"#a78bfa",fontSize:"12px"}}>AI-powered migration — please review carefully before use.</p>}
 {result.validation_message&&<p style={{color:result.valid?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.valid?"✓ ":"⚠ "}{result.validation_message}</p>}
 {result.var_message&&<p style={{color:result.vars_ok?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.vars_ok?"✓ ":"⚠ "}{result.var_message}</p>}
