@@ -95,7 +95,7 @@ def call_groq(prompt, max_tokens=500):
     except Exception as e:
         return f"AI service error: {str(e)}"
 
-# ---------- WHY EXPLANATIONS (sir's suggestion) ----------
+# ---------- WHY EXPLANATIONS ----------
 WHY_RULES = [
     ("xrange", "xrange() was removed in Python 3. range() now returns an efficient iterator, so xrange() is no longer needed."),
     ("raw_input", "raw_input() was renamed to input() in Python 3. The old Python 3-style input() (which evaluated code) was removed for safety."),
@@ -119,6 +119,27 @@ def get_why_explanations(original_source):
         if keyword in original_source:
             explanations.append({"change": keyword, "why": reason})
     return explanations
+
+# ---------- DEPENDENCY REQUIREMENTS (sir's suggestion) ----------
+DEPENDENCY_RULES = [
+    ("urllib2", "urllib2 -> use built-in urllib.request (no external package needed in Python 3)"),
+    ("cPickle", "cPickle -> use built-in pickle (no external package needed in Python 3)"),
+    ("StringIO", "StringIO -> use built-in io.StringIO (no external package needed in Python 3)"),
+    ("commands", "commands module -> use built-in subprocess (no external package needed in Python 3)"),
+    ("MySQLdb", "MySQLdb -> install mysqlclient or use PyMySQL for Python 3"),
+    ("Tkinter", "Tkinter -> use tkinter (lowercase) in Python 3"),
+    ("ConfigParser", "ConfigParser -> use configparser (lowercase) in Python 3"),
+    ("Queue", "Queue module -> use queue (lowercase) in Python 3"),
+    ("HTMLParser", "HTMLParser -> use html.parser in Python 3"),
+    ("urlparse", "urlparse -> use urllib.parse in Python 3"),
+]
+
+def check_dependencies(source):
+    deps = []
+    for keyword, note in DEPENDENCY_RULES:
+        if keyword in source:
+            deps.append(note)
+    return deps
 
 # ---------- PYTHON ----------
 def analyze_code(source):
@@ -212,7 +233,7 @@ def migrate_code(source):
     if re.search(r'except\s+(\w+)\s*,\s*(\w+)', migrated):
         migrated = re.sub(r'except\s+(\w+)\s*,\s*(\w+)', r'except \1 as \2', migrated)
         changes.append("except X, e -> except X as e")
-    return {"migrated_code": migrated, "changes": changes, "why_explanations": get_why_explanations(source)}
+    return {"migrated_code": migrated, "changes": changes, "why_explanations": get_why_explanations(source), "dependencies": check_dependencies(source)}
 
 # ---------- VALIDATOR (syntax check) ----------
 def validate_python(code):
@@ -308,6 +329,7 @@ def ai_advanced_migrate(source, language):
         conf = calculate_confidence(source, cleaned, output["valid"], output["vars_ok"])
         output.update(conf)
         output["why_explanations"] = get_why_explanations(source)
+        output["dependencies"] = check_dependencies(source)
     return output
 
 # ---------- PHP ----------
