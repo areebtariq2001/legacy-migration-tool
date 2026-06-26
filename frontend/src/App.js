@@ -73,11 +73,11 @@ Back to Home
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#a78bfa",fontWeight:"bold"}}>POST /ai-migrate</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI migration with validation, variable checks, confidence score, explanations, and dependency suggestions</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI migration. Python has full guardrails (validation, confidence, verification). Other languages are experimental.</p>
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze-java, /migrate-java, /analyze-php, /migrate-php, /analyze-cobol, /migrate-cobol</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Multi-language analysis and migration</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Multi-language rule-based analysis and migration</p>
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"24px"}}>
 <p style={{color:"#f59e0b",fontWeight:"bold"}}>POST /ai-suggest, /explain, /generate-tests</p>
@@ -177,7 +177,7 @@ View API
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"20px"}}>
 {[
 ["Deterministic Migration","Rule-based conversions that produce the exact same output every run."],
-["AI + Confidence Score","AI modernizes your file, with validation, variable checks, and a confidence score for every result."],
+["AI + Confidence Score","For Python, AI migration includes validation, variable checks, and a confidence score."],
 ["Why Explanations","Every change comes with a plain-language reason, so senior devs can verify the logic."],
 ["Dependency Check","Flags libraries and modules that need updating for the target version."],
 ["Batch Summary","Process many files at once and see which are safe and which need review."],
@@ -399,9 +399,14 @@ Home
 </button>
 ))}
 </div>
-{mode==="aimigrate"&&(
+{mode==="aimigrate"&&language==="python"&&(
 <div style={{background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.3)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
-<p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>AI Migrate modernizes your entire file. It runs syntax validation, a variable-integrity check, assigns a confidence score, explains each change, and flags dependency updates. Always review results before use.</p>
+<p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>AI Migrate modernizes your entire file. For Python, it runs syntax validation, a variable-integrity check, assigns a confidence score, explains each change, and flags dependency updates. Always review results before use.</p>
+</div>
+)}
+{mode==="aimigrate"&&language!=="python"&&(
+<div style={{background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.4)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
+<p style={{color:"#f87171",fontSize:"13px",margin:0}}>Note: AI Migrate for {language.toUpperCase()} is experimental and has no automated guardrails yet. For reliable results, use the rule-based <b>Migrate</b> mode instead.</p>
 </div>
 )}
 <div style={{border:"2px dashed "+border,borderRadius:"8px",padding:"20px",textAlign:"center",marginBottom:"16px"}}>
@@ -492,7 +497,9 @@ Download PDF Report
 </div>
 )}
 {result.ai_powered&&<p style={{color:"#a78bfa",fontSize:"12px"}}>AI-powered migration — please review carefully before use.</p>}
+{result.experimental_message&&<div style={{background:"rgba(248,113,113,0.1)",border:"1px solid #f87171",borderRadius:"10px",padding:"12px",marginBottom:"10px"}}><p style={{color:"#f87171",fontSize:"12px",fontWeight:"bold",margin:0}}>⚠ {result.experimental_message}</p></div>}
 {result.validation_message&&<p style={{color:result.valid?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.valid?"✓ ":"⚠ "}{result.validation_message}</p>}
+{result.verify_message&&<p style={{color:result.verified?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.verified?"✓ ":"⚠ "}{result.verify_message}</p>}
 {result.var_message&&<p style={{color:result.vars_ok?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.vars_ok?"✓ ":"⚠ "}{result.var_message}</p>}
 {result.dependencies&&result.dependencies.length>0&&(
 <div style={{marginTop:"10px",background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"10px",padding:"12px"}}>
