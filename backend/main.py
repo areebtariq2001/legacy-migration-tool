@@ -54,6 +54,16 @@ def save_stats(stats):
     except:
         pass
 
+def write_audit_log(action, filename, result_summary):
+    # Permanent audit log for compliance (Stage 3)
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_line = f"[{timestamp}] action={action} | file={filename} | result={result_summary}\n"
+        with open("audit_log.txt", "a", encoding="utf-8") as f:
+            f.write(log_line)
+    except:
+        pass
+
 def track_usage(action, filename):
     stats = load_stats()
     stats["total_files"] += 1
@@ -530,8 +540,8 @@ def detect_language(filename):
     ext = filename.split('.')[-1].lower()
     return {"py": "python", "java": "java", "php": "php", "cbl": "cobol"}.get(ext, "python")
 
-# ---------- ERROR HANDLING (Stage 3: make tool crash-proof) ----------
-MAX_FILE_SIZE = 500000  # 500 KB limit
+# ---------- ERROR HANDLING ----------
+MAX_FILE_SIZE = 500000
 
 def safe_read_file(content_bytes, filename):
     if len(content_bytes) > MAX_FILE_SIZE:
@@ -558,6 +568,7 @@ async def analyze(file: UploadFile = File(...)):
         result = analyze_code(source)
         result["filename"] = file.filename
         track_usage("analyze", file.filename)
+        write_audit_log("analyze", file.filename, f"issues={len(result.get('issues', []))}")
         return result
     except Exception as e:
         return {"filename": file.filename, "error": f"Analysis failed safely: {str(e)}"}
@@ -572,6 +583,7 @@ async def migrate(file: UploadFile = File(...)):
         result = migrate_code(source)
         result["filename"] = file.filename
         track_usage("migrate", file.filename)
+        write_audit_log("migrate", file.filename, f"changes={len(result.get('changes', []))}")
         return result
     except Exception as e:
         return {"filename": file.filename, "error": f"Migration failed safely: {str(e)}"}
@@ -586,6 +598,8 @@ async def ai_migrate_endpoint(file: UploadFile = File(...)):
         result = ai_advanced_migrate(source, detect_language(file.filename))
         result["filename"] = file.filename
         track_usage("ai-migrate", file.filename)
+        summary = f"confidence={result.get('confidence_score','N/A')} level={result.get('confidence_level','N/A')}"
+        write_audit_log("ai-migrate", file.filename, summary)
         return result
     except Exception as e:
         return {"filename": file.filename, "error": f"Migration failed safely: {str(e)}"}
@@ -618,6 +632,7 @@ async def migrate_php_endpoint(file: UploadFile = File(...)):
     result = migrate_php(source)
     result["filename"] = file.filename
     track_usage("migrate-php", file.filename)
+    write_audit_log("migrate-php", file.filename, f"changes={len(result.get('changes', []))}")
     return result
 
 @app.post("/analyze-java")
@@ -634,6 +649,7 @@ async def migrate_java_endpoint(file: UploadFile = File(...)):
     result = migrate_java(source)
     result["filename"] = file.filename
     track_usage("migrate-java", file.filename)
+    write_audit_log("migrate-java", file.filename, f"changes={len(result.get('changes', []))}")
     return result
 
 @app.post("/analyze-cobol")
@@ -650,6 +666,7 @@ async def migrate_cobol_endpoint(file: UploadFile = File(...)):
     result = migrate_cobol(source)
     result["filename"] = file.filename
     track_usage("migrate-cobol", file.filename)
+    write_audit_log("migrate-cobol", file.filename, f"changes={len(result.get('changes', []))}")
     return result
 
 @app.post("/ai-suggest")
@@ -679,6 +696,15 @@ async def generate_tests_endpoint(file: UploadFile = File(...)):
 @app.get("/stats")
 def get_stats():
     return load_stats()
+
+@app.get("/audit-log")
+def get_audit_log():
+    try:
+        with open("audit_log.txt", "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        return {"total_entries": len(lines), "recent": lines[-50:]}
+    except:
+        return {"total_entries": 0, "recent": []}
 
 @app.get("/")
 def root():
