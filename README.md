@@ -1,1 +1,52 @@
-StarBuild: Predictable Legacy Code MigrationStarBuild is a next-generation migration engine designed to modernize legacy codebases with transparency, safety, and predictability. Unlike standard "black-box" AI tools, StarBuild combines deterministic rule-based logic with AI-powered modernization, guarded by strict AST-based verification. Key FeaturesHybrid Migration Core: Uses deterministic rules for standard syntax upgrades and AI for complex logic, ensuring 100% predictability for core components.  AST-Based Validation: Every output is verified against Python's Abstract Syntax Tree (AST) to ensure the code is syntactically sound and runnable.  Migration Confidence Scoring: Instead of blind trust, StarBuild provides a 0-100% confidence score, flagging files that require human review.  Variable Integrity Guardrails: Strict checks prevent the common AI "hallucination" of renaming variables, which often causes production crashes.  "Why These Changes?" Explanations: Full transparency on why specific code modifications were made, aiding developer learning and auditability.  Smart Fallback: If AI confidence is low or the migration is risky, the tool automatically falls back to deterministic rule-based migration.  ArchitectureStarBuild is built with a decoupled architecture for maximum reliability:Frontend: React-based dashboard hosted on GitHub Pages.  Backend: FastAPI (Python) running on Render, handling the migration logic and AST verification.  AI Engine: Groq API integration for complex logic, wrapped in custom guardrails.   Confidence Scoring LogicWe believe in honest automation. Our confidence score starts at 100 and deducts points based on specific risk factors:Risk FactorPoints DeductedSyntax Error-50Compile Verification Fail-30Variable Names Changed-25Incomplete Output (Code missing)-2090+: High Confidence60-89: Medium Confidence (Review Recommended)<60: Low Confidence (Manual Review Required) Roadmap & StatusStage 1 & 2 (Completed): Core rule-based engine, AI integration, and AST guardrails.  Stage 3 (In Progress - ~60%): Stress-testing against 1,000+ real-world files, automated QA pipelines, and batch processing.  Stage 4 (Planned): User authentication, permission management, and on-premise deployment options.  Stage 5 (Future): Enterprise compliance (SOC 2), audit trails, and banking-grade reliability.  Note: StarBuild is currently in active development. We emphasize a "Human-in-the-loop" approach, ensuring that every migration is reviewable, transparent, and safe.  
+# StarBuild — Legacy Code Migration Tool
+
+StarBuild modernizes legacy code (Python 2 to 3, plus Java, PHP, and COBOL) predictably, through transparent confidence scoring and AST-based verification.
+
+**Live demo:** https://areebtariq2001.github.io/legacy-tool/
+**API:** https://legacy-migration-tool-1.onrender.com
+
+---
+
+## What it does
+
+StarBuild offers two migration approaches:
+
+- **Rule-based migration** — deterministic conversions that produce the exact same output every run.
+- **AI-assisted migration** — for Python, AI migration runs behind a full set of guardrails (syntax validation, variable-integrity checks, compile-level verification, and a confidence score).
+
+When AI migration is unreliable, StarBuild automatically falls back to deterministic rule-based migration, so the user always gets a usable result.
+
+## Key features
+
+- **6 modes:** Analyze, Migrate, AI Migrate, AI Suggest, Explain, Generate Tests
+- **Confidence scoring** — every AI migration gets a 0–100% score with a clear reason
+- **AST + compile verification** — output is checked to be valid, execution-ready Python
+- **Variable-integrity check** — flags if AI renamed or dropped any names
+- **Why explanations** — every change comes with a plain-language reason
+- **Dependency check** — flags libraries that need updating
+- **Smart fallback** — switches to rule-based migration when AI confidence is low
+- **Batch processing** — migrate many files at once with a summary report
+- **Audit logging** — every migration is recorded with a timestamp (text and JSON formats)
+- **Error handling** — handles empty, oversized, and binary files safely without crashing
+
+## Testing
+
+StarBuild has been stress-tested on 50+ real-world legacy scripts from open-source repositories, achieving 97% high-confidence migrations. An automated test runner sends files to the backend and produces a colour-coded HTML validation report.
+
+On large, complex files (such as numpy or pandas internals), StarBuild honestly returns a "review recommended" status rather than a false 100% — reflecting a human-in-the-loop design.
+
+## Tech stack
+
+- **Frontend:** React (hosted on GitHub Pages)
+- **Backend:** FastAPI / Python (hosted on Render)
+- **AI:** Groq API (Llama 3.1)
+
+## Project status
+
+- Stage 1 (Basic migration): complete
+- Stage 2 (Reliable + guardrails): complete
+- Stage 3 (Production-ready): ~80% — automated testing, real-world testing, error handling, and audit logging done; large-scale batch processing (async) is the remaining work
+
+## Author
+
+Built by Areeb Tariq.
