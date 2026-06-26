@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Request
 from fastapi.responses import Response, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import ast
 import re
 import os
@@ -55,7 +56,6 @@ def save_stats(stats):
         pass
 
 def write_audit_log(action, filename, result_summary):
-    # Permanent audit log for compliance (Stage 3)
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_line = f"[{timestamp}] action={action} | file={filename} | result={result_summary}\n"
@@ -398,6 +398,27 @@ def ai_advanced_migrate(source, language):
         output["experimental_message"] = f"AI migration for {language.upper()} is experimental and has no automated guardrails yet. For reliable results, use the rule-based Migrate mode. Always review carefully."
     return output
 
+# ---------- AI as QA ASSISTANT (Stage 3 - sir's suggestion) ----------
+def ai_qa_compare(original, migrated):
+    prompt = (
+        "You are a senior QA engineer reviewing a Python 2 to Python 3 migration. "
+        "Compare the ORIGINAL and MIGRATED code below. "
+        "Answer in this exact format:\n"
+        "VERDICT: SAME or DIFFERENT\n"
+        "REASON: one short sentence.\n"
+        "Only say DIFFERENT if the migrated code would behave differently or lose functionality.\n\n"
+        f"ORIGINAL:\n{original}\n\nMIGRATED:\n{migrated}"
+    )
+    response = call_groq(prompt, max_tokens=300)
+    verdict = "UNKNOWN"
+    if "VERDICT:" in response:
+        after = response.split("VERDICT:")[1].strip()
+        if after.upper().startswith("SAME"):
+            verdict = "SAME"
+        elif after.upper().startswith("DIFFERENT"):
+            verdict = "DIFFERENT"
+    return {"qa_verdict": verdict, "qa_full_response": response}
+
 # ---------- PHP ----------
 def analyze_php(source):
     issues = []
@@ -603,6 +624,19 @@ async def ai_migrate_endpoint(file: UploadFile = File(...)):
         return result
     except Exception as e:
         return {"filename": file.filename, "error": f"Migration failed safely: {str(e)}"}
+
+class QARequest(BaseModel):
+    original: str
+    migrated: str
+
+@app.post("/qa-check")
+async def qa_check(req: QARequest):
+    try:
+        result = ai_qa_compare(req.original, req.migrated)
+        write_audit_log("qa-check", "code-pair", f"verdict={result['qa_verdict']}")
+        return result
+    except Exception as e:
+        return {"qa_verdict": "ERROR", "qa_full_response": f"QA check failed safely: {str(e)}"}
 
 @app.post("/download")
 async def download(file: UploadFile = File(...)):
