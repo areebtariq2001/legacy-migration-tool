@@ -321,6 +321,28 @@ def calculate_confidence(source, migrated, valid, vars_ok, verified):
 
 # ---------- AI ADVANCED MIGRATION ----------
 def ai_advanced_migrate(source, language):
+    # Edge case: empty or comment-only file (found during Stage 3 testing)
+    code_lines = [ln for ln in source.split("\n") if ln.strip() and not ln.strip().startswith("#")]
+    if not code_lines:
+        if language == "python":
+            return {
+                "migrated_code": source,
+                "ai_powered": True,
+                "valid": True,
+                "validation_message": "File has no executable code (empty or comments only).",
+                "verified": True,
+                "verify_message": "Nothing to verify - no executable code.",
+                "vars_ok": True,
+                "var_message": "",
+                "confidence_score": 100,
+                "confidence_level": "High confidence",
+                "confidence_reason": "no executable code to migrate",
+                "why_explanations": [],
+                "dependencies": []
+            }
+        else:
+            return {"migrated_code": source, "ai_powered": True, "experimental": True,
+                    "experimental_message": f"AI migration for {language.upper()} is experimental. File has no executable code."}
     prompt = (
         f"You are an expert {language} developer. "
         f"Convert this legacy {language} code to modern {language}. "
@@ -349,7 +371,6 @@ def ai_advanced_migrate(source, language):
         output["why_explanations"] = get_why_explanations(source)
         output["dependencies"] = check_dependencies(source)
     else:
-        # Java/PHP/COBOL: full AST guardrails not yet available -> show honest experimental warning
         output["experimental"] = True
         output["experimental_message"] = f"AI migration for {language.upper()} is experimental and has no automated guardrails yet. For reliable results, use the rule-based Migrate mode. Always review carefully."
     return output
@@ -368,7 +389,6 @@ def analyze_php(source):
         (r'\bcreate_function\b', "create_function() found - use anonymous functions"),
         (r'\bmcrypt_\w+\b', "mcrypt_* found - use openssl or sodium"),
         (r'\beach\(', "each() found - use foreach loop"),
-        (r'\bsplit\b', "split() found - use explode()"),
     ]
     for pattern, msg in php_checks:
         if re.search(pattern, source):
