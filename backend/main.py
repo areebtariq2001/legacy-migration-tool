@@ -398,7 +398,7 @@ def ai_advanced_migrate(source, language):
         output["experimental_message"] = f"AI migration for {language.upper()} is experimental and has no automated guardrails yet. For reliable results, use the rule-based Migrate mode. Always review carefully."
     return output
 
-# ---------- AI as QA ASSISTANT (Stage 3 - sir's suggestion) ----------
+# ---------- AI as QA ASSISTANT ----------
 def ai_qa_compare(original, migrated):
     prompt = (
         "You are a senior QA engineer reviewing a Python 2 to Python 3 migration. "
@@ -739,6 +739,33 @@ def get_audit_log():
         return {"total_entries": len(lines), "recent": lines[-50:]}
     except:
         return {"total_entries": 0, "recent": []}
+
+@app.get("/audit-log-json")
+def get_audit_log_json():
+    # Structured JSON audit trail (enterprise compliance format - sir's suggestion)
+    entries = []
+    try:
+        with open("audit_log.txt", "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                entry = {"raw": line}
+                try:
+                    if line.startswith("["):
+                        entry["timestamp"] = line.split("]")[0][1:]
+                    if "action=" in line:
+                        entry["action"] = line.split("action=")[1].split(" |")[0].strip()
+                    if "file=" in line:
+                        entry["file"] = line.split("file=")[1].split(" |")[0].strip()
+                    if "result=" in line:
+                        entry["result"] = line.split("result=")[1].strip()
+                except:
+                    pass
+                entries.append(entry)
+        return {"audit_ready": True, "total_entries": len(entries), "entries": entries[-100:]}
+    except:
+        return {"audit_ready": True, "total_entries": 0, "entries": []}
 
 @app.get("/")
 def root():
