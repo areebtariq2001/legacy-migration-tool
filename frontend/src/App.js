@@ -675,7 +675,7 @@ Download Summary PDF
 {result.migrated_code&&(
 <div style={{marginTop:"12px"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
-<span style={{color:"#38bdf8",fontSize:"13px",fontWeight:"bold"}}>Diff View:</span>
+<span style={{color:"#38bdf8",fontSize:"13px",fontWeight:"bold"}}>Diff View (line-by-line):</span>
 <div style={{display:"flex",gap:"8px"}}>
 <button onClick={()=>handleCopy(idx,result.migrated_code)} style={{padding:"4px 12px",borderRadius:"6px",border:"1px solid #38bdf8",background:copied[idx]?"#38bdf8":"transparent",color:copied[idx]?"#0a0e1a":"#38bdf8",cursor:"pointer",fontSize:"12px"}}>
 {copied[idx]?"Copied!":"Copy"}
@@ -690,6 +690,7 @@ oldValue={result.original_code||""}
 newValue={result.migrated_code||""}
 splitView={true}
 useDarkTheme={darkMode}
+hideLineNumbers={false}
 leftTitle="Original"
 rightTitle="Migrated"
 />
