@@ -346,53 +346,106 @@ a.click();
 const handleDownloadReport=()=>{
 if(results.length===0)return alert("No results to generate report!");
 const doc=new jsPDF();
-const date=new Date().toLocaleDateString();
+const pageW=210;
+const date=new Date().toLocaleString();
+// Header band
+doc.setFillColor(14,165,233);
+doc.rect(0,0,pageW,30,"F");
+doc.setTextColor(255,255,255);
 doc.setFontSize(20);
-doc.setTextColor(56,189,248);
-doc.text("StarBuild Migration Report",105,20,{align:"center"});
-doc.setFontSize(10);
-doc.setTextColor(100,116,139);
-doc.text("Generated: "+date,105,28,{align:"center"});
-doc.setFontSize(12);
-doc.setTextColor(0,0,0);
-doc.text("Summary",14,40);
-doc.setFontSize(10);
-doc.text("Total Files: "+results.length,14,48);
-const ti=results.reduce((acc,r)=>acc+(r.issues?r.issues.length:0),0);
-const tc=results.reduce((acc,r)=>acc+(r.changes?r.changes.length:0),0);
-doc.text("Total Issues Found: "+ti,14,54);
-doc.text("Total Changes Made: "+tc,14,60);
-let y=74;
-results.forEach((result,idx)=>{
-if(y>270){doc.addPage();y=20;}
-doc.setFontSize(12);
-doc.setTextColor(56,189,248);
-doc.text((idx+1)+". "+result.filename,14,y);
-y+=8;
+doc.text("StarBuild Migration Report",pageW/2,14,{align:"center"});
 doc.setFontSize(9);
-doc.setTextColor(0,0,0);
+doc.text("Audit-ready summary  |  Generated: "+date,pageW/2,23,{align:"center"});
+
+// Summary stats
+const scoredR=results.filter(r=>r.confidence_score!==undefined);
+const high=scoredR.filter(r=>r.confidence_score>=90).length;
+const med=scoredR.filter(r=>r.confidence_score>=60&&r.confidence_score<90).length;
+const low=scoredR.filter(r=>r.confidence_score<60).length;
+const avg=scoredR.length>0?Math.round(scoredR.reduce((a,r)=>a+r.confidence_score,0)/scoredR.length):0;
+
+let y=42;
+doc.setTextColor(15,23,42);
+doc.setFontSize(13);
+doc.text("Summary",14,y);
+y+=8;
+doc.setDrawColor(203,213,225);
+doc.setFillColor(241,245,249);
+doc.roundedRect(14,y-5,182,30,2,2,"FD");
+doc.setFontSize(10);
+doc.setTextColor(51,65,85);
+doc.text("Total files processed: "+results.length,20,y+2);
+doc.text("Files with confidence score: "+scoredR.length,20,y+9);
+doc.text("Average confidence: "+avg+"%",20,y+16);
+doc.setTextColor(22,163,74);
+doc.text("High: "+high,120,y+2);
+doc.setTextColor(217,119,6);
+doc.text("Need review: "+med,120,y+9);
+doc.setTextColor(220,38,38);
+doc.text("Low: "+low,120,y+16);
+y+=36;
+
+// Per-file detail
+doc.setTextColor(15,23,42);
+doc.setFontSize(13);
+doc.text("Per-file details",14,y);
+y+=8;
+
+results.forEach((result,idx)=>{
+if(y>262){doc.addPage();y=20;}
+// file name
+doc.setFontSize(11);
+doc.setTextColor(14,165,233);
+doc.text((idx+1)+". "+result.filename,14,y);
+y+=6;
+doc.setFontSize(9);
+// status / confidence
 if(result.confidence_score!==undefined){
-doc.text("Confidence: "+result.confidence_score+"% ("+result.confidence_level+")",14,y);y+=5;
+let col=[22,163,74];
+if(result.confidence_score<90&&result.confidence_score>=60)col=[217,119,6];
+if(result.confidence_score<60)col=[220,38,38];
+doc.setTextColor(col[0],col[1],col[2]);
+doc.text("Status: "+result.confidence_score+"%  ("+(result.confidence_level||"")+")",18,y);
+y+=5;
 }
-if(result.issues&&result.issues.length>0){
-doc.text("Issues:",14,y);y+=5;
-result.issues.forEach(issue=>{
-if(y>270){doc.addPage();y=20;}
-const lines=doc.splitTextToSize("  - "+issue,180);
-doc.text(lines,14,y);
-y+=lines.length*5;
-});
+doc.setTextColor(71,85,105);
+if(result.validation_message){
+const vl=doc.splitTextToSize("Validation: "+result.validation_message,175);
+doc.text(vl,18,y);y+=vl.length*4.5;
+}
+if(result.var_message){
+const vm=doc.splitTextToSize("Names: "+result.var_message,175);
+doc.text(vm,18,y);y+=vm.length*4.5;
 }
 if(result.changes&&result.changes.length>0){
-doc.text("Changes:",14,y);y+=5;
-result.changes.forEach(change=>{
-if(y>270){doc.addPage();y=20;}
-doc.text("  - "+change,14,y);y+=5;
-});
+const ch=doc.splitTextToSize("Changes: "+result.changes.join(", "),175);
+doc.text(ch,18,y);y+=ch.length*4.5;
 }
-y+=8;
+if(result.issues&&result.issues.length>0){
+const iss=doc.splitTextToSize("Issues: "+result.issues.join(", "),175);
+doc.text(iss,18,y);y+=iss.length*4.5;
+}
+if(result.error){
+doc.setTextColor(220,38,38);
+const er=doc.splitTextToSize("Error: "+result.error,175);
+doc.text(er,18,y);y+=er.length*4.5;
+}
+y+=4;
+doc.setDrawColor(226,232,240);
+doc.line(14,y,196,y);
+y+=6;
 });
-doc.save("starbuild_report_"+date.replace(/\//g,"-")+".pdf");
+
+// Footer note on every page
+const pageCount=doc.internal.getNumberOfPages();
+for(let p=1;p<=pageCount;p++){
+doc.setPage(p);
+doc.setFontSize(8);
+doc.setTextColor(148,163,184);
+doc.text("StarBuild - Predictable, AST-verified, audit-ready legacy migration.  Page "+p+" of "+pageCount,pageW/2,290,{align:"center"});
+}
+
+doc.save("StarBuild_Migration_Summary_"+new Date().toISOString().slice(0,10)+".pdf");
 };
 
 const handleCopy=(idx,code)=>{
@@ -536,7 +589,7 @@ Download All as ZIP ({migratedCount} files)
 </button>
 )}
 <button onClick={handleDownloadReport} style={{flex:1,padding:"12px",borderRadius:"8px",border:"1px solid #a78bfa",background:"rgba(167,139,250,0.1)",color:"#a78bfa",fontWeight:"700",cursor:"pointer"}}>
-Download PDF Report
+Download Summary PDF
 </button>
 </div>
 <h3 style={{color:"#38bdf8"}}>Results ({results.length} files)</h3>
