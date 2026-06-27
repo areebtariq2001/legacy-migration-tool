@@ -66,6 +66,9 @@ Back to Home
 <p style={{color:"#94a3b8",marginBottom:"32px"}}>Integrate StarBuild into your CI/CD pipeline or applications.</p>
 <h2 style={{color:"#38bdf8",fontSize:"20px",marginBottom:"12px"}}>Base URL</h2>
 <div style={codeStyle}>https://legacy-migration-tool-1.onrender.com</div>
+<h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Interactive Docs (Swagger)</h2>
+<p style={{color:"#94a3b8",fontSize:"14px",marginBottom:"8px"}}>Full interactive OpenAPI documentation is available at:</p>
+<div style={codeStyle}>https://legacy-migration-tool-1.onrender.com/docs</div>
 <h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Endpoints</h2>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#22c55e",fontWeight:"bold"}}>POST /analyze, /migrate</p>
@@ -73,19 +76,15 @@ Back to Home
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#a78bfa",fontWeight:"bold"}}>POST /ai-migrate</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI migration. Python has full guardrails (validation, confidence, verification). Other languages are experimental.</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI migration. Python and Java include full guardrails (validation, confidence, verification). PHP and COBOL are experimental.</p>
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#22c55e",fontWeight:"bold"}}>POST /qa-check</p>
 <p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI-as-QA: compares original and migrated code for logical differences</p>
 </div>
-<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
+<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"24px"}}>
 <p style={{color:"#22c55e",fontWeight:"bold"}}>GET /audit-log, /audit-log-json</p>
 <p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Audit trail of all migrations (text and structured JSON formats)</p>
-</div>
-<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"24px"}}>
-<p style={{color:"#f59e0b",fontWeight:"bold"}}>POST /ai-suggest, /explain, /generate-tests</p>
-<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI suggestions, explanations, and test generation</p>
 </div>
 <h2 style={{color:"#38bdf8",fontSize:"20px",margin:"24px 0 12px"}}>Example: cURL</h2>
 <div style={codeStyle}>{`curl -X POST \\
@@ -110,6 +109,11 @@ for i in range(10):
     data = input()
     if i in d:
         print(d[i])`;
+const matrixRows=[
+["Manual Migration","High risk of human error","Slow & expensive","No"],
+["Generic AI Tools","High hallucination risk","No verification","No"],
+["StarBuild","Predictable & AST-verified","Confidence scored","Yes"]
+];
 return(
 <div style={{minHeight:"100vh",background:"#0a0e1a",color:"#e2e8f0",fontFamily:"system-ui, Arial, sans-serif"}}>
 <style>{`
@@ -167,7 +171,13 @@ View API
 </div>
 </div>
 </div>
-<div style={{maxWidth:"1100px",margin:"0 auto",padding:"20px 24px 60px"}}>
+<div style={{maxWidth:"1100px",margin:"0 auto",padding:"0 24px 30px"}}>
+<div style={{background:"rgba(34,197,94,0.08)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:"12px",padding:"16px 20px",display:"flex",alignItems:"center",gap:"12px"}}>
+<span style={{fontSize:"20px"}}>🔒</span>
+<span style={{color:"#86efac",fontSize:"14px"}}>Your code is never stored on our servers. Migrations are processed in-memory and discarded immediately after the session.</span>
+</div>
+</div>
+<div style={{maxWidth:"1100px",margin:"0 auto",padding:"20px 24px 40px"}}>
 <div style={{textAlign:"center",marginBottom:"24px"}}>
 <div style={{display:"inline-block",background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:"12px",padding:"12px 24px"}}>
 <span style={{color:"#22c55e",fontWeight:"700",fontSize:"15px"}}>Stress-tested on 50+ real-world legacy scripts &mdash; 97% high-confidence migrations</span>
@@ -182,11 +192,39 @@ View API
 ))}
 </div>
 </div>
+<div style={{maxWidth:"1100px",margin:"0 auto",padding:"20px 24px 60px"}}>
+<h2 style={{textAlign:"center",color:"white",fontSize:"24px",marginBottom:"24px",fontWeight:"700"}}>Why StarBuild?</h2>
+<div style={{overflowX:"auto"}}>
+<table style={{width:"100%",borderCollapse:"collapse",minWidth:"600px"}}>
+<thead>
+<tr style={{borderBottom:"2px solid rgba(56,189,248,0.3)"}}>
+<th style={{textAlign:"left",padding:"12px",color:"#64748b",fontSize:"13px"}}>Approach</th>
+<th style={{textAlign:"left",padding:"12px",color:"#64748b",fontSize:"13px"}}>Reliability</th>
+<th style={{textAlign:"left",padding:"12px",color:"#64748b",fontSize:"13px"}}>Verification</th>
+<th style={{textAlign:"left",padding:"12px",color:"#64748b",fontSize:"13px"}}>Audit-ready</th>
+</tr>
+</thead>
+<tbody>
+{matrixRows.map((row,ri)=>{
+const isStar=row[0]==="StarBuild";
+return(
+<tr key={ri} style={{borderBottom:"1px solid rgba(255,255,255,0.08)",background:isStar?"rgba(56,189,248,0.08)":"transparent"}}>
+<td style={{padding:"14px 12px",fontWeight:isStar?"700":"400",color:isStar?"#38bdf8":"#cbd5e1",fontSize:"14px"}}>{row[0]}</td>
+<td style={{padding:"14px 12px",color:isStar?"#86efac":"#94a3b8",fontSize:"13px"}}>{row[1]}</td>
+<td style={{padding:"14px 12px",color:isStar?"#86efac":"#94a3b8",fontSize:"13px"}}>{row[2]}</td>
+<td style={{padding:"14px 12px",color:isStar?"#86efac":"#94a3b8",fontSize:"13px",fontWeight:isStar?"700":"400"}}>{row[3]}</td>
+</tr>
+);
+})}
+</tbody>
+</table>
+</div>
+</div>
 <div style={{maxWidth:"1100px",margin:"0 auto",padding:"20px 24px 80px"}}>
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"20px"}}>
 {[
 ["Deterministic Migration","Rule-based conversions that produce the exact same output every run."],
-["AI + Confidence Score","For Python, AI migration includes validation, variable checks, and a confidence score."],
+["AI + Confidence Score","For Python and Java, AI migration includes validation, name checks, and a confidence score."],
 ["Why Explanations","Every change comes with a plain-language reason, so senior devs can verify the logic."],
 ["Dependency Check","Flags libraries and modules that need updating for the target version."],
 ["Batch Summary","Process many files at once and see which are safe and which need review."],
@@ -413,7 +451,12 @@ Home
 <p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>AI Migrate modernizes your entire file. For Python, it runs syntax validation, a variable-integrity check, assigns a confidence score, explains each change, and flags dependency updates. Always review results before use.</p>
 </div>
 )}
-{mode==="aimigrate"&&language!=="python"&&(
+{mode==="aimigrate"&&language==="java"&&(
+<div style={{background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
+<p style={{color:"#22c55e",fontSize:"13px",margin:0}}>AI Migrate for Java now includes guardrails: syntax validation (via AST parsing), name-integrity checks, a confidence score, and a smart fallback to rule-based migration when the AI is unreliable. Always review results before use.</p>
+</div>
+)}
+{mode==="aimigrate"&&(language==="php"||language==="cobol")&&(
 <div style={{background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.4)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
 <p style={{color:"#f87171",fontSize:"13px",margin:0}}>Note: AI Migrate for {language.toUpperCase()} is experimental and has no automated guardrails yet. For reliable results, use the rule-based <b>Migrate</b> mode instead.</p>
 </div>
@@ -425,6 +468,14 @@ Click to select files (multiple allowed)
 </label>
 {files.length>0&&<p style={{color:subtext,marginTop:"8px"}}>{files.length} file(s) selected: {files.map(f=>f.name).join(", ")}</p>}
 </div>
+{files.length===0&&!loading&&results.length===0&&(
+<div style={{background:"rgba(56,189,248,0.05)",border:"1px dashed rgba(56,189,248,0.3)",borderRadius:"8px",padding:"16px",marginBottom:"16px"}}>
+<p style={{color:"#38bdf8",fontSize:"13px",fontWeight:"700",margin:"0 0 8px 0"}}>How to get started:</p>
+<p style={{color:subtext,fontSize:"12.5px",margin:"4px 0"}}>1. Choose your language (Python, Java, PHP, or COBOL) above.</p>
+<p style={{color:subtext,fontSize:"12.5px",margin:"4px 0"}}>2. Pick a mode &mdash; "Migrate" for reliable rule-based, or "AI Migrate" for AI with guardrails.</p>
+<p style={{color:subtext,fontSize:"12.5px",margin:"4px 0"}}>3. Select one or more files and run. You'll get a confidence score and a side-by-side diff.</p>
+</div>
+)}
 {loading&&(
 <div style={{marginBottom:"16px"}}>
 <div style={{display:"flex",justifyContent:"space-between",marginBottom:"4px"}}>
@@ -510,6 +561,7 @@ Download PDF Report
 {result.validation_message&&<p style={{color:result.valid?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.valid?"✓ ":"⚠ "}{result.validation_message}</p>}
 {result.verify_message&&<p style={{color:result.verified?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.verified?"✓ ":"⚠ "}{result.verify_message}</p>}
 {result.var_message&&<p style={{color:result.vars_ok?"#4ade80":"#f87171",fontSize:"12px",fontWeight:"bold"}}>{result.vars_ok?"✓ ":"⚠ "}{result.var_message}</p>}
+{result.note_java&&<p style={{color:subtext,fontSize:"11px",fontStyle:"italic",marginTop:"4px"}}>{result.note_java}</p>}
 {result.dependencies&&result.dependencies.length>0&&(
 <div style={{marginTop:"10px",background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"10px",padding:"12px"}}>
 <p style={{color:"#f59e0b",fontSize:"13px",fontWeight:"700",margin:"0 0 6px 0"}}>Dependency Updates Required:</p>
