@@ -87,6 +87,10 @@ Back to Home
 <p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Flags external dependencies (databases, APIs, network) that may break during migration, with risk levels</p>
 </div>
 <div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
+<p style={{color:"#a78bfa",fontWeight:"bold"}}>POST /tech-debt</p>
+<p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>Technical debt score: counts legacy patterns and estimates remediation effort (code-based estimate)</p>
+</div>
+<div style={{background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:"8px",padding:"16px",marginBottom:"12px"}}>
 <p style={{color:"#22c55e",fontWeight:"bold"}}>POST /qa-check</p>
 <p style={{color:"#94a3b8",fontSize:"13px",margin:"4px 0"}}>AI-as-QA: compares original and migrated code for logical differences</p>
 </div>
@@ -234,7 +238,7 @@ return(
 ["Deterministic Migration","Rule-based conversions that produce the exact same output every run."],
 ["AI + Confidence Score","For Python and Java, AI migration includes validation, name checks, and a confidence score."],
 ["Call-Graph Analysis","Maps which functions call which, and what external libraries each depends on."],
-["Dependency Risk Assessment","Flags databases and APIs that may break during migration, with risk levels."],
+["Risk + Tech-Debt Reports","Flags risky dependencies and estimates remediation effort before you migrate."],
 ["Batch Summary","Process many files at once and see which are safe and which need review."],
 ["Audit Dashboard","Every action logged with a timestamp."]
 ].map(([title,desc])=>(
@@ -305,6 +309,7 @@ else if(mode==="explain"){endpoint="/explain";}
 else if(mode==="tests"){endpoint="/generate-tests";}
 else if(mode==="callgraph"){endpoint="/call-graph";}
 else if(mode==="risk"){endpoint="/risk-assessment";}
+else if(mode==="debt"){endpoint="/tech-debt";}
 else if(language==="python"){endpoint=mode==="analyze"?"/analyze":"/migrate";}
 else if(language==="java"){endpoint=mode==="analyze"?"/analyze-java":"/migrate-java";}
 else if(language==="php"){endpoint=mode==="analyze"?"/analyze-php":"/migrate-php";}
@@ -417,6 +422,11 @@ doc.setTextColor(180,83,9);
 doc.text("Risk: "+result.overall_risk+"  (High:"+result.high_count+" Medium:"+result.medium_count+" Low:"+result.low_count+")",18,y);
 y+=5;
 }
+if(result.debt_score!==undefined){
+doc.setTextColor(124,58,237);
+doc.text("Tech Debt: "+result.debt_score+"/100 ("+result.debt_level+")  ~"+result.estimated_hours+"h, "+result.total_issues+" issues",18,y);
+y+=5;
+}
 doc.setTextColor(71,85,105);
 if(result.validation_message){
 const vl=doc.splitTextToSize("Validation: "+result.validation_message,175);
@@ -474,10 +484,11 @@ const reviewCount=scored.filter(r=>r.confidence_score<threshold).length;
 
 const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
-const modes=[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["aimigrate","AI Migrate","#a78bfa"],["callgraph","Call Graph","#ec4899"],["risk","Risk Check","#f87171"],["ai","AI Suggest","#f59e0b"],["explain","Explain","#38bdf8"],["tests","Gen Tests","#ec4899"]];
+const modes=[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["aimigrate","AI Migrate","#a78bfa"],["callgraph","Call Graph","#ec4899"],["risk","Risk Check","#f87171"],["debt","Tech Debt","#7c3aed"],["ai","AI Suggest","#f59e0b"],["explain","Explain","#38bdf8"],["tests","Gen Tests","#ec4899"]];
 
 const confColor=(score)=>score>=90?"#4ade80":score>=60?"#f59e0b":"#f87171";
 const riskColor=(lvl)=>lvl==="High"?"#f87171":lvl==="Medium"?"#f59e0b":"#4ade80";
+const debtColor=(score)=>score>=60?"#f87171":score>=30?"#f59e0b":"#4ade80";
 
 return(
 <div style={{minHeight:"100vh",background:bg,color:text,fontFamily:"Arial",transition:"all 0.3s"}}>
@@ -509,12 +520,17 @@ Home
 </div>
 {mode==="callgraph"&&(
 <div style={{background:"rgba(236,72,153,0.1)",border:"1px solid rgba(236,72,153,0.3)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
-<p style={{color:"#ec4899",fontSize:"13px",margin:0}}>Call Graph maps the structure of a Python file: which functions are defined, which functions call which, and what external libraries each function depends on. This helps you understand impact before migrating. (Python files only.)</p>
+<p style={{color:"#ec4899",fontSize:"13px",margin:0}}>Call Graph maps the structure of a Python file: which functions are defined, which functions call which, and what external libraries each function depends on. (Python files only.)</p>
 </div>
 )}
 {mode==="risk"&&(
 <div style={{background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.3)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
-<p style={{color:"#f87171",fontSize:"13px",margin:0}}>Risk Check scans for external dependencies (databases, APIs, network libraries) that commonly break during migration, and assigns each a risk level with a recommendation. This is a static "Risk Assessment" to plan migrations safely. (Python files only.)</p>
+<p style={{color:"#f87171",fontSize:"13px",margin:0}}>Risk Check scans for external dependencies (databases, APIs, network libraries) that commonly break during migration, and assigns each a risk level with a recommendation. (Python files only.)</p>
+</div>
+)}
+{mode==="debt"&&(
+<div style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.3)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
+<p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>Tech Debt counts legacy patterns in your code and estimates the manual remediation effort (in developer-hours). It turns code quality into a planning number. This is a code-based estimate, not a guarantee. (Python files only.)</p>
 </div>
 )}
 {mode==="aimigrate"&&language==="python"&&(
@@ -559,7 +575,7 @@ Click to select files (multiple allowed)
 </div>
 )}
 <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"12px",borderRadius:"8px",border:"none",background:loading?"#334155":"#38bdf8",color:loading?"#94a3b8":"#0a0e1a",fontWeight:"700",cursor:"pointer"}}>
-{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":mode==="aimigrate"?"AI Migrate (Full)":mode==="callgraph"?"Analyze Call Graph":mode==="risk"?"Run Risk Assessment":mode==="ai"?"Get AI Suggestions":mode==="explain"?"Explain Code":"Generate Tests"}
+{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":mode==="aimigrate"?"AI Migrate (Full)":mode==="callgraph"?"Analyze Call Graph":mode==="risk"?"Run Risk Assessment":mode==="debt"?"Calculate Tech Debt":mode==="ai"?"Get AI Suggestions":mode==="explain"?"Explain Code":"Generate Tests"}
 </button>
 </div>
 {results.length>0&&(
@@ -609,6 +625,44 @@ Download Summary PDF
 </div>
 {result.error&&<p style={{color:"#f87171",fontSize:"13px"}}>{result.error}</p>}
 {result.call_graph_error&&<div style={{background:"rgba(248,113,113,0.1)",border:"1px solid #f87171",borderRadius:"10px",padding:"12px"}}><p style={{color:"#f87171",fontSize:"13px",margin:0}}>{result.call_graph_error}</p></div>}
+{result.debt_score!==undefined&&(
+<div style={{marginTop:"4px"}}>
+<div style={{background:debtColor(result.debt_score)+"1a",border:"1px solid "+debtColor(result.debt_score),borderRadius:"10px",padding:"14px",marginBottom:"12px"}}>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+<span style={{fontWeight:"700",fontSize:"15px",color:debtColor(result.debt_score)}}>Technical Debt Score: {result.debt_score}/100</span>
+<span style={{fontSize:"13px",fontWeight:"600",color:debtColor(result.debt_score)}}>{result.debt_level}</span>
+</div>
+<div style={{background:darkMode?"#334155":"#cbd5e1",borderRadius:"6px",height:"8px",marginTop:"8px"}}>
+<div style={{background:debtColor(result.debt_score),borderRadius:"6px",height:"8px",width:result.debt_score+"%"}}></div>
+</div>
+<div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"12px",marginTop:"12px"}}>
+<div style={{textAlign:"center",background:codebg,borderRadius:"8px",padding:"10px"}}>
+<div style={{fontSize:"20px",fontWeight:"700",color:text}}>{result.total_issues}</div>
+<div style={{fontSize:"11px",color:subtext}}>Legacy Issues</div>
+</div>
+<div style={{textAlign:"center",background:codebg,borderRadius:"8px",padding:"10px"}}>
+<div style={{fontSize:"20px",fontWeight:"700",color:"#a78bfa"}}>~{result.estimated_hours}h</div>
+<div style={{fontSize:"11px",color:subtext}}>Est. Remediation Effort</div>
+</div>
+</div>
+</div>
+{result.items&&result.items.length>0&&(
+<div style={{marginBottom:"8px"}}>
+<p style={{color:"#a78bfa",fontSize:"13px",fontWeight:"700",margin:"0 0 6px 0"}}>Debt Breakdown:</p>
+<div style={{background:codebg,borderRadius:"8px",padding:"12px"}}>
+{result.items.map((it,ii)=>(
+<div key={ii} style={{display:"flex",justifyContent:"space-between",fontSize:"12.5px",marginBottom:"4px",color:text}}>
+<span style={{fontFamily:"monospace"}}>{it.issue} <span style={{color:subtext}}>x{it.occurrences}</span></span>
+<span style={{color:subtext}}>~{it.estimated_minutes} min</span>
+</div>
+))}
+</div>
+</div>
+)}
+{result.summary&&<p style={{color:text,fontSize:"13px",margin:"8px 0 4px 0"}}>{result.summary}</p>}
+{result.disclaimer&&<p style={{color:subtext,fontSize:"11px",fontStyle:"italic",marginTop:"4px"}}>{result.disclaimer}</p>}
+</div>
+)}
 {result.overall_risk!==undefined&&(
 <div style={{marginTop:"4px"}}>
 <div style={{background:(result.high_count>0?"rgba(248,113,113,0.12)":result.medium_count>0?"rgba(245,158,11,0.12)":"rgba(74,222,128,0.12)"),border:"1px solid "+(result.high_count>0?"#f87171":result.medium_count>0?"#f59e0b":"#4ade80"),borderRadius:"10px",padding:"14px",marginBottom:"12px"}}>
@@ -641,7 +695,7 @@ Download Summary PDF
 ):(
 <p style={{color:"#4ade80",fontSize:"13px"}}>No known risky external dependencies detected.</p>
 )}
-{result.disclaimer&&<p style={{color:subtext,fontSize:"11px",fontStyle:"italic",marginTop:"8px"}}>{result.disclaimer}</p>}
+{result.disclaimer&&!result.debt_score&&<p style={{color:subtext,fontSize:"11px",fontStyle:"italic",marginTop:"8px"}}>{result.disclaimer}</p>}
 </div>
 )}
 {result.total_functions!==undefined&&(
