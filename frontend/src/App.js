@@ -310,6 +310,7 @@ else if(mode==="tests"){endpoint="/generate-tests";}
 else if(mode==="callgraph"){endpoint="/call-graph";}
 else if(mode==="risk"){endpoint="/risk-assessment";}
 else if(mode==="debt"){endpoint="/tech-debt";}
+else if(mode==="docs"){endpoint="/generate-docs";}
 else if(language==="python"){endpoint=mode==="analyze"?"/analyze":"/migrate";}
 else if(language==="java"){endpoint=mode==="analyze"?"/analyze-java":"/migrate-java";}
 else if(language==="php"){endpoint=mode==="analyze"?"/analyze-php":"/migrate-php";}
@@ -464,7 +465,7 @@ doc.text("StarBuild - Predictable, AST-verified, audit-ready legacy migration.  
 doc.save("StarBuild_Migration_Summary_"+new Date().toISOString().slice(0,10)+".pdf");
 };
 
-const handleCopy=(idx,code)=>{
+const handleDownloadDocs=(result)=>{
 navigator.clipboard.writeText(code);
 setCopied({...copied,[idx]:true});
 setTimeout(()=>setCopied(prev=>({...prev,[idx]:false})),2000);
@@ -484,7 +485,7 @@ const reviewCount=scored.filter(r=>r.confidence_score<threshold).length;
 
 const langs=["python","java","php","cobol"];
 const lc={python:"#3b82f6",java:"#f59e0b",php:"#8b5cf6",cobol:"#10b981"};
-const modes=[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["aimigrate","AI Migrate","#a78bfa"],["callgraph","Call Graph","#ec4899"],["risk","Risk Check","#f87171"],["debt","Tech Debt","#7c3aed"],["ai","AI Suggest","#f59e0b"],["explain","Explain","#38bdf8"],["tests","Gen Tests","#ec4899"]];
+const modes=[["analyze","Analyze","#38bdf8"],["migrate","Migrate","#22c55e"],["aimigrate","AI Migrate","#a78bfa"],["callgraph","Call Graph","#ec4899"],["risk","Risk Check","#f87171"],["debt","Tech Debt","#7c3aed"],["docs","Gen Docs","#14b8a6"],["ai","AI Suggest","#f59e0b"],["explain","Explain","#38bdf8"],["tests","Gen Tests","#ec4899"]];
 
 const confColor=(score)=>score>=90?"#4ade80":score>=60?"#f59e0b":"#f87171";
 const riskColor=(lvl)=>lvl==="High"?"#f87171":lvl==="Medium"?"#f59e0b":"#4ade80";
@@ -528,7 +529,7 @@ Home
 <p style={{color:"#f87171",fontSize:"13px",margin:0}}>Risk Check scans for external dependencies (databases, APIs, network libraries) that commonly break during migration, and assigns each a risk level with a recommendation. (Python files only.)</p>
 </div>
 )}
-{mode==="debt"&&(
+{mode==="docs"&&(
 <div style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.3)",borderRadius:"8px",padding:"12px",marginBottom:"16px"}}>
 <p style={{color:"#a78bfa",fontSize:"13px",margin:0}}>Tech Debt counts legacy patterns in your code and estimates the manual remediation effort (in developer-hours). It turns code quality into a planning number. This is a code-based estimate, not a guarantee. (Python files only.)</p>
 </div>
@@ -575,7 +576,7 @@ Click to select files (multiple allowed)
 </div>
 )}
 <button onClick={handleSubmit} disabled={loading} style={{width:"100%",padding:"12px",borderRadius:"8px",border:"none",background:loading?"#334155":"#38bdf8",color:loading?"#94a3b8":"#0a0e1a",fontWeight:"700",cursor:"pointer"}}>
-{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":mode==="aimigrate"?"AI Migrate (Full)":mode==="callgraph"?"Analyze Call Graph":mode==="risk"?"Run Risk Assessment":mode==="debt"?"Calculate Tech Debt":mode==="ai"?"Get AI Suggestions":mode==="explain"?"Explain Code":"Generate Tests"}
+{loading?`Processing ${results.length}/${files.length} files...`:mode==="analyze"?"Analyze Files":mode==="migrate"?"Migrate Files":mode==="aimigrate"?"AI Migrate (Full)":mode==="callgraph"?"Analyze Call Graph":mode==="risk"?"Run Risk Assessment":mode==="debt"?"Calculate Tech Debt":mode==="docs"?"Generate Documentation":mode==="ai"?"Get AI Suggestions":mode==="explain"?"Explain Code":"Generate Tests"}
 </button>
 </div>
 {results.length>0&&(
@@ -698,6 +699,7 @@ Download Summary PDF
 {result.disclaimer&&!result.debt_score&&<p style={{color:subtext,fontSize:"11px",fontStyle:"italic",marginTop:"8px"}}>{result.disclaimer}</p>}
 </div>
 )}
+{result.doc_generated&&(<div style={{marginTop:"4px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}}><span style={{color:"#14b8a6",fontWeight:"700",fontSize:"15px"}}>Knowledge Transfer Documentation</span><button onClick={()=>handleDownloadDocs(result)} style={{padding:"6px 14px",borderRadius:"8px",border:"1px solid #14b8a6",background:"rgba(20,184,166,0.1)",color:"#14b8a6",cursor:"pointer",fontSize:"13px",fontWeight:"700"}}>Download Docs PDF</button></div><div style={{background:codebg,borderRadius:"8px",padding:"14px",marginBottom:"8px"}}><pre style={{margin:0,color:text,fontSize:"12.5px",whiteSpace:"pre-wrap",fontFamily:"Arial",lineHeight:"1.5"}}>{result.ai_documentation}</pre></div><p style={{color:subtext,fontSize:"11px",fontStyle:"italic"}}>AI-generated documentation. Review before using as official handover material.</p></div>)}
 {result.total_functions!==undefined&&(
 <div style={{marginTop:"4px"}}>
 <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"12px",marginBottom:"14px"}}>
@@ -840,3 +842,6 @@ rightTitle="Migrated"
 );
 }
 export default App;
+
+
+
