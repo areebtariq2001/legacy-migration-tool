@@ -158,7 +158,6 @@ def check_dependencies(source):
     return deps
 
 # ---------- TECHNICAL DEBT SCORE ----------
-# Each item: (pattern, label, minutes_per_occurrence) - effort is an ESTIMATE
 DEBT_RULES = [
     (r'\bprint\s+[^(]', "print statement", 5),
     (r'\bxrange\b', "xrange()", 5),
@@ -196,8 +195,6 @@ def calculate_tech_debt(source):
             })
             total_count += count
             total_minutes += count * mins
-    # Debt score: 0 (clean) to 100 (very high debt), based on issue count
-    # Each issue adds points, capped at 100
     debt_score = min(100, total_count * 8)
     if debt_score == 0:
         debt_level = "Minimal debt"
@@ -300,7 +297,7 @@ def deep_verify_python(code):
         return {"verified": False, "verify_message": f"Compilation failed: {str(e)}. Code is not execution-ready."}
     return {"verified": True, "verify_message": "Code compiles successfully and is execution-ready (compile-level verification passed)."}
 
-# ---------- JAVA GUARDRAILS (via javalang) ----------
+# ---------- JAVA GUARDRAILS ----------
 def validate_java(code):
     if not JAVALANG_AVAILABLE:
         return {"valid": True, "validation_message": "Java parser not available; skipped syntax check."}
@@ -702,6 +699,42 @@ def analyze_call_graph(source):
         "total_functions": len(defined_functions)
     }
 
+# ---------- KNOWLEDGE TRANSFER (KT) DOC GENERATOR ----------
+def generate_documentation(source, filename):
+    analysis = analyze_code(source)
+    risk = assess_dependency_risk(source)
+    debt = calculate_tech_debt(source)
+    callgraph = analyze_call_graph(source)
+    prompt = (
+        "You are a senior software architect writing handover documentation for a legacy file. "
+        "Read the code and write clear, professional documentation a new developer could use. "
+        "Use these exact section headers, each on its own line:\n"
+        "PURPOSE: (2-3 sentences on what this file does overall)\n"
+        "BUSINESS_LOGIC: (explain the main logic and flow in plain English, 3-5 sentences)\n"
+        "KEY_FUNCTIONS: (one short line per function describing what it does)\n"
+        "NOTES: (any risks, dependencies, or things to watch when migrating)\n\n"
+        "Do not use markdown symbols. Just the headers and plain text.\n\n"
+        f"Code:\n{source}"
+    )
+    ai_doc = call_groq(prompt, max_tokens=1200)
+    return {
+        "filename": filename,
+        "ai_documentation": ai_doc,
+        "functions": analysis.get("functions", []),
+        "classes": analysis.get("classes", []),
+        "imports": analysis.get("imports", []),
+        "total_functions": callgraph.get("total_functions", 0),
+        "entry_points": callgraph.get("entry_points", []),
+        "overall_risk": risk.get("overall_risk", "N/A"),
+        "high_count": risk.get("high_count", 0),
+        "medium_count": risk.get("medium_count", 0),
+        "low_count": risk.get("low_count", 0),
+        "debt_score": debt.get("debt_score", 0),
+        "debt_level": debt.get("debt_level", ""),
+        "estimated_hours": debt.get("estimated_hours", 0),
+        "doc_generated": True
+    }
+
 # ---------- PHP ----------
 def analyze_php(source):
     issues = []
@@ -733,22 +766,16 @@ def migrate_php(source):
         (r'\bmysql_fetch_array\b', 'mysqli_fetch_array', "mysql_fetch_array -> mysqli_fetch_array"),
         (r'\bmysql_fetch_assoc\b', 'mysqli_fetch_assoc', "mysql_fetch_assoc -> mysqli_fetch_assoc"),
         (r'\bmysql_fetch_row\b', 'mysqli_fetch_row', "mysql_fetch_row -> mysqli_fetch_row"),
-        (r'\bmysql_fetch_object\b', 'mysqli_fetch_object', "mysql_fetch_object -> mysqli_fetch_object"),
         (r'\bmysql_num_rows\b', 'mysqli_num_rows', "mysql_num_rows -> mysqli_num_rows"),
         (r'\bmysql_close\b', 'mysqli_close', "mysql_close -> mysqli_close"),
         (r'\bmysql_error\b', 'mysqli_error', "mysql_error -> mysqli_error"),
         (r'\bmysql_insert_id\b', 'mysqli_insert_id', "mysql_insert_id -> mysqli_insert_id"),
         (r'\bmysql_real_escape_string\b', 'mysqli_real_escape_string', "mysql_real_escape_string -> mysqli_real_escape_string"),
         (r'\bmysql_select_db\b', 'mysqli_select_db', "mysql_select_db -> mysqli_select_db"),
-        (r'\bmysql_affected_rows\b', 'mysqli_affected_rows', "mysql_affected_rows -> mysqli_affected_rows"),
         (r'\bereg_replace\(', 'preg_replace(', "ereg_replace() -> preg_replace()"),
-        (r'\beregi_replace\(', 'preg_replace(', "eregi_replace() -> preg_replace()"),
         (r'\bereg\(', 'preg_match(', "ereg() -> preg_match()"),
-        (r'\beregi\(', 'preg_match(', "eregi() -> preg_match()"),
         (r'\bsplit\(', 'explode(', "split() -> explode()"),
-        (r'\bspliti\(', 'explode(', "spliti() -> explode()"),
         (r'\bcall_user_method\b', 'call_user_func', "call_user_method -> call_user_func"),
-        (r'\bcreate_function\b', '/* use anonymous function */ function', "create_function -> anonymous function"),
     ]
     for pattern, repl, label in rules:
         if re.search(pattern, migrated):
@@ -767,9 +794,6 @@ def analyze_java(source):
         (r"\bnew\s+Integer\s*\(", "new Integer() found - use Integer.valueOf()"),
         (r"\bnew\s+Boolean\s*\(", "new Boolean() found - use Boolean.valueOf()"),
         (r"\bnew\s+Double\s*\(", "new Double() found - use Double.valueOf()"),
-        (r"\bnew\s+Long\s*\(", "new Long() found - use Long.valueOf()"),
-        (r"\bnew\s+Float\s*\(", "new Float() found - use Float.valueOf()"),
-        (r"\bnew\s+Character\s*\(", "new Character() found - use Character.valueOf()"),
         (r"\bVector\b", "Vector found - use ArrayList"),
         (r"\bHashtable\b", "Hashtable found - use HashMap"),
         (r"\bEnumeration\b", "Enumeration found - use Iterator"),
@@ -788,8 +812,6 @@ def migrate_java(source):
         (r'\bnew\s+Boolean\(', 'Boolean.valueOf(', "new Boolean() -> Boolean.valueOf()"),
         (r'\bnew\s+Double\(', 'Double.valueOf(', "new Double() -> Double.valueOf()"),
         (r'\bnew\s+Long\(', 'Long.valueOf(', "new Long() -> Long.valueOf()"),
-        (r'\bnew\s+Float\(', 'Float.valueOf(', "new Float() -> Float.valueOf()"),
-        (r'\bnew\s+Character\(', 'Character.valueOf(', "new Character() -> Character.valueOf()"),
         (r'\bStringBuffer\b', 'StringBuilder', "StringBuffer -> StringBuilder"),
         (r'\bVector\b', 'ArrayList', "Vector -> ArrayList"),
         (r'\bHashtable\b', 'HashMap', "Hashtable -> HashMap"),
@@ -981,6 +1003,20 @@ async def tech_debt_endpoint(file: UploadFile = File(...)):
         return result
     except Exception as e:
         return {"filename": file.filename, "error": f"Tech-debt analysis failed safely: {str(e)}"}
+
+@app.post("/generate-docs")
+async def generate_docs_endpoint(file: UploadFile = File(...)):
+    try:
+        content = await file.read()
+        source, error = safe_read_file(content, file.filename)
+        if error:
+            return {"filename": file.filename, "error": error}
+        result = generate_documentation(source, file.filename)
+        track_usage("generate-docs", file.filename)
+        write_audit_log("generate-docs", file.filename, "doc generated")
+        return result
+    except Exception as e:
+        return {"filename": file.filename, "error": f"Doc generation failed safely: {str(e)}"}
 
 @app.post("/download")
 async def download(file: UploadFile = File(...)):
