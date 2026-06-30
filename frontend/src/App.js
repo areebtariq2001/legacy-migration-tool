@@ -492,6 +492,7 @@ y+=5.5;
 });
 doc.save("StarBuild_KT_Doc_"+result.filename+".pdf");
 };
+const handleDownloadRisk=(result)=>{ const doc=new jsPDF(); const date=new Date().toLocaleString(); doc.setFillColor(248,113,113); doc.rect(0,0,210,30,'F'); doc.setTextColor(255,255,255); doc.setFontSize(20); doc.text('StarBuild - Risk Assessment',105,14,{align:'center'}); doc.setFontSize(9); doc.text('File: '+result.filename+'  |  '+date,105,23,{align:'center'}); let y=42; doc.setTextColor(15,23,42); doc.setFontSize(12); doc.text('Overall Risk: '+(result.overall_risk||'N/A'),14,y); y+=8; doc.setFontSize(10); doc.setTextColor(51,65,85); doc.text('High: '+(result.high_count||0)+'   Medium: '+(result.medium_count||0)+'   Low: '+(result.low_count||0),14,y); y+=10; (result.findings||[]).forEach((fd)=>{ if(y>270){doc.addPage();y=20;} doc.setFontSize(11); doc.setTextColor(15,23,42); doc.text(fd.dependency+' ['+fd.risk_level+']',14,y); y+=6; doc.setFontSize(9); doc.setTextColor(71,85,105); const dl=doc.splitTextToSize(fd.description+' Recommendation: '+fd.recommendation,180); doc.text(dl,14,y); y+=dl.length*4.5+4; }); doc.save('StarBuild_Risk_'+result.filename+'.pdf'); };
 const handleReset=()=>{ setFiles([]); setResults([]); setProgress(0); setCopied({}); setShowWhy({}); };
 const handleCopy=(idx,code)=>{
 navigator.clipboard.writeText(code);
@@ -698,7 +699,7 @@ Download Summary PDF
 <div style={{background:(result.high_count>0?"rgba(248,113,113,0.12)":result.medium_count>0?"rgba(245,158,11,0.12)":"rgba(74,222,128,0.12)"),border:"1px solid "+(result.high_count>0?"#f87171":result.medium_count>0?"#f59e0b":"#4ade80"),borderRadius:"10px",padding:"14px",marginBottom:"12px"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
 <span style={{fontWeight:"700",fontSize:"15px",color:(result.high_count>0?"#f87171":result.medium_count>0?"#f59e0b":"#4ade80")}}>Risk Assessment: {result.overall_risk}</span>
-<span style={{fontSize:"12px",color:subtext}}>{result.total_findings} dependency findings</span>{result.total_findings>0&&<span style={{display:"inline-block",marginLeft:"8px",padding:"2px 10px",borderRadius:"12px",fontSize:"11px",fontWeight:"700",background:"rgba(56,189,248,0.15)",color:"#38bdf8",border:"1px solid #38bdf8"}}>{result.total_findings} analyzed</span>}
+<span style={{fontSize:"12px",color:subtext}}>{result.total_findings} dependency findings</span>{result.total_findings>0&&<button onClick={()=>handleDownloadRisk(result)} style={{marginLeft:"8px",padding:"3px 12px",borderRadius:"8px",border:"1px solid #f87171",background:"transparent",color:"#f87171",cursor:"pointer",fontSize:"11px",fontWeight:"700"}}>Download Risk PDF</button>}{result.total_findings>0&&<span style={{display:"inline-block",marginLeft:"8px",padding:"2px 10px",borderRadius:"12px",fontSize:"11px",fontWeight:"700",background:"rgba(56,189,248,0.15)",color:"#38bdf8",border:"1px solid #38bdf8"}}>{result.total_findings} analyzed</span>}
 </div>
 <div style={{display:"flex",gap:"16px",marginTop:"8px"}}>
 <span style={{fontSize:"12px",color:"#f87171"}}>High: {result.high_count}</span>
@@ -871,6 +872,8 @@ rightTitle="Migrated"
 );
 }
 export default App;
+
+
 
 
 
