@@ -1,52 +1,118 @@
-# StarBuild — Legacy Code Migration Tool
+StarBuild — Legacy Code Migration & Audit Platform
 
-StarBuild modernizes legacy code (Python 2 to 3, plus Java, PHP, and COBOL) predictably, through transparent confidence scoring and AST-based verification.
+Modernize legacy code, predictably.
 
-**Live demo:** https://areebtariq2001.github.io/legacy-tool/
-**API:** https://legacy-migration-tool-1.onrender.com
+StarBuild is an AI-assisted platform that doesn't just translate legacy code — it helps teams audit, plan, and de-risk migrations. Every automated change comes with transparent confidence scoring and AST-based verification, so you always know what's safe to ship and what needs a human review.
 
----
+Supports Python, Java, PHP, and COBOL.
 
-## What it does
+🔗 Live demo: https://areebtariq2001.github.io/legacy-tool/
+📚 API docs (Swagger): https://legacy-migration-tool-1.onrender.com/docs
 
-StarBuild offers two migration approaches:
 
-- **Rule-based migration** — deterministic conversions that produce the exact same output every run.
-- **AI-assisted migration** — for Python, AI migration runs behind a full set of guardrails (syntax validation, variable-integrity checks, compile-level verification, and a confidence score).
+Why StarBuild?
 
-When AI migration is unreliable, StarBuild automatically falls back to deterministic rule-based migration, so the user always gets a usable result.
+Most "migration tools" are blind converters — they change your code and leave you guessing whether it still works. Generic AI tools hallucinate and offer no verification. StarBuild is built around one idea: migration should be predictable and auditable.
 
-## Key features
+ApproachReliabilityVerificationAudit-readyManual migrationHigh risk of human errorSlow & expensiveNoGeneric AI toolsHigh hallucination riskNo verificationNoStarBuildPredictable & AST-verifiedConfidence scoredYes
 
-- **6 modes:** Analyze, Migrate, AI Migrate, AI Suggest, Explain, Generate Tests
-- **Confidence scoring** — every AI migration gets a 0–100% score with a clear reason
-- **AST + compile verification** — output is checked to be valid, execution-ready Python
-- **Variable-integrity check** — flags if AI renamed or dropped any names
-- **Why explanations** — every change comes with a plain-language reason
-- **Dependency check** — flags libraries that need updating
-- **Smart fallback** — switches to rule-based migration when AI confidence is low
-- **Batch processing** — migrate many files at once with a summary report
-- **Audit logging** — every migration is recorded with a timestamp (text and JSON formats)
-- **Error handling** — handles empty, oversized, and binary files safely without crashing
+Stress-tested on 50+ real-world legacy scripts — 97% high-confidence migrations.
 
-## Testing
 
-StarBuild has been stress-tested on 50+ real-world legacy scripts from open-source repositories, achieving 97% high-confidence migrations. An automated test runner sends files to the backend and produces a colour-coded HTML validation report.
+Features
 
-On large, complex files (such as numpy or pandas internals), StarBuild honestly returns a "review recommended" status rather than a false 100% — reflecting a human-in-the-loop design.
+StarBuild has moved beyond translation into audit & planning. It offers nine analysis modes:
 
-## Tech stack
+Migration
 
-- **Frontend:** React (hosted on GitHub Pages)
-- **Backend:** FastAPI / Python (hosted on Render)
-- **AI:** Groq API (Llama 3.1)
 
-## Project status
+Analyze — Detects legacy patterns, functions, classes, and imports.
+Migrate — Deterministic, rule-based conversion that produces the exact same output every run.
+AI Migrate — Full-file AI modernization with guardrails. For Python and Java: syntax validation, variable-integrity checks, a confidence score (0–100%), compile-level verification, and a smart fallback to rule-based migration when the AI is unreliable.
 
-- Stage 1 (Basic migration): complete
-- Stage 2 (Reliable + guardrails): complete
-- Stage 3 (Production-ready): ~80% — automated testing, real-world testing, error handling, and audit logging done; large-scale batch processing (async) is the remaining work
 
-## Author
+Audit & Planning
 
-Built by Areeb Tariq.
+
+Call Graph — Maps which functions call which, and which external library each function depends on. Understand impact before migrating.
+Risk Check — A dependency "Risk Assessment" that flags databases, APIs, and network libraries likely to break during migration, each with a High / Medium / Low risk level and a recommendation.
+Tech Debt — A code-based Technical Debt Score (0–100) with an estimated remediation effort in developer-hours. Turns code quality into a planning number.
+Gen Docs — A Knowledge Transfer (KT) documentation generator. Reads a whole file and produces professional handover docs (purpose, business logic, key functions, migration notes) — downloadable as PDF. Perfect for legacy code with no documentation.
+
+
+Developer Assist
+
+
+AI Suggest — Three targeted code-improvement suggestions.
+Explain — Plain-language, section-by-section explanation of what the code does.
+Gen Tests — Generates unit tests for the migrated code.
+
+
+Reliability & Trust
+
+
+Confidence scoring — Every AI migration gets a 0–100% score with an itemized reason.
+AST + compile verification — Output is checked to be valid and runnable.
+Smart fallback — When AI output is unreliable, the tool switches to deterministic rule-based migration automatically.
+Audit logging — Every action is timestamped and recorded (text + JSON), with a live usage dashboard.
+Batch processing — Process many files at once with an adjustable confidence threshold (accept vs. manual review).
+Security by design — Code is processed in-memory and never stored on the server.
+Audit-ready PDF reports — Downloadable migration summaries and KT documentation.
+
+
+
+Tech Stack
+
+
+Backend: Python, FastAPI, AST parsing, javalang (Java AST), Groq (Llama 3.1) for AI features
+Frontend: React, deployed on GitHub Pages
+Backend hosting: Render
+Reports: jsPDF (client-side PDF generation)
+
+
+
+How It Works
+
+
+Upload one or more legacy files (.py, .java, .php, .cbl).
+Choose a mode — migrate, or run an audit (call graph, risk, tech debt, docs).
+Review the results — confidence scores, diffs, risk levels, and explanations.
+Export — download migrated files, a summary PDF, or KT documentation.
+
+
+
+Project Status
+
+StarBuild is an actively developed, working tool with an honest roadmap.
+
+
+Stage 1–2 (Reliable migration + guardrails): ✅ Complete
+Stage 3 (Production polish — testing, audit, error handling): 🔨 ~80%
+Stage 4–5 (Enterprise & banking-grade — scale, SOC 2, team workflows): 📋 Planned (requires company infrastructure)
+
+
+Honest by design: StarBuild is not yet banking-ready, and we say so. Enterprise scale needs dedicated infrastructure and a review team. StarBuild is the verified foundation to get there.
+
+
+Roadmap
+
+Planned features as StarBuild grows from a tool into an enterprise platform:
+
+
+Interactive, cross-file dependency-graph visualization
+Rollback / snapshot mechanism for safe migrations
+Incremental migration support (mixed Python 2 / 3 codebases)
+Team collaboration with an approval workflow (review / approve)
+Cross-file, whole-project call-graph analysis
+Async processing & queues for large-scale (1000+ file) migrations
+
+
+
+Author
+
+Built by Areeb Tariq with AI assistance.
+
+
+GitHub: @areebtariq2001
+
+
