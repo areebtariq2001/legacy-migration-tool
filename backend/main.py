@@ -1154,6 +1154,10 @@ SENSITIVE_PATTERNS = [
     (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", "Email address", "Medium"),
     (r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b", "Possible phone number", "Low"),
     (r"(?i)\b(private[_-]?key|BEGIN RSA)\b", "Private key reference", "High"),
+    (r"(?i)\b(md5|sha1)\b", "Weak/non-compliant hashing (MD5/SHA1)", "High"),
+    (r"(?i)\b(DES|RC4|ARC4|Blowfish)\b", "Weak encryption algorithm", "High"),
+    (r"(?i)\bMODE_ECB\b", "Insecure ECB cipher mode", "High"),
+    (r"http://[^\s\x22\x27]+", "Insecure HTTP (non-TLS) URL", "Medium"),
 ]
 
 def scan_sensitive_data(source):
@@ -1252,4 +1256,5 @@ async def banking_patterns_endpoint(file: UploadFile = File(...)):
 @app.get("/")
 def root():
     return {"message": "API is running"}
+
 
