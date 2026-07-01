@@ -1201,6 +1201,55 @@ async def scan_sensitive_endpoint(file: UploadFile = File(...)):
     except Exception as e:
         return {"filename": file.filename, "error": f"Scan failed safely: {str(e)}"}
 
+BANKING_PATTERNS = [
+    (r"(?i)\b(interest|rate\s*of\s*interest|roi|compound|simple\s*interest)\b", "Interest calculation", "Verify rounding and precision rules after migration."),
+    (r"(?i)\b(balance|min[_\s]?balance|available[_\s]?balance|overdraft)\b", "Account balance logic", "Confirm balance checks and limits behave identically."),
+    (r"(?i)\b(transaction|txn|transfer|deposit|withdraw|debit|credit)\b", "Transaction handling", "Ensure transaction integrity and logging are preserved."),
+    (r"(?i)\b(account[_\s]?number|acc[_\s]?no|iban|routing|swift)\b", "Account identifiers", "Check formatting and validation of account identifiers."),
+    (r"(?i)\b(financial[_\s]?year|fiscal|maturity|tenure|emi|installment)\b", "Financial date/term logic", "Validate date and tenure calculations across versions."),
+    (r"(?i)\b(currency|exchange[_\s]?rate|forex|decimal|round)\b", "Currency/precision logic", "Currency rounding must match exactly; test edge cases."),
+    (r"(?i)\b(loan|principal|disburse|repayment|default)\b", "Loan processing", "Re-test loan calculation and repayment schedules."),
+]
+
+def detect_banking_patterns(source):
+    findings = []
+    for pattern, label, note in BANKING_PATTERNS:
+        matches = re.findall(pattern, source)
+        count = len(matches)
+        if count > 0:
+            findings.append({
+                "pattern": label,
+                "occurrences": count,
+                "note": note
+            })
+    if findings:
+        verdict = "Banking business logic detected - extra care required during migration"
+    else:
+        verdict = "No common banking patterns detected"
+    return {
+        "findings": findings,
+        "total_findings": len(findings),
+        "verdict": verdict,
+        "is_banking": len(findings) > 0,
+        "disclaimer": "This is a keyword-based detector to highlight likely financial logic. It is a planning aid, not a semantic analysis. Always have a domain expert review critical banking calculations."
+    }
+
+@app.post("/banking-patterns")
+async def banking_patterns_endpoint(file: UploadFile = File(...)):
+    try:
+        content = await file.read()
+        source, error = safe_read_file(content, file.filename)
+        if error:
+            return {"filename": file.filename, "error": error}
+        result = detect_banking_patterns(source)
+        result["filename"] = file.filename
+        track_usage("banking-patterns", file.filename)
+        write_audit_log("banking-patterns", file.filename, "patterns=" + str(result.get("total_findings", 0)))
+        return result
+    except Exception as e:
+        return {"filename": file.filename, "error": f"Banking scan failed safely: {str(e)}"}
+
 @app.get("/")
 def root():
     return {"message": "API is running"}
+
