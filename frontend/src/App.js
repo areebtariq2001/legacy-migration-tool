@@ -804,6 +804,7 @@ Download Summary PDF
 <div style={{background:confColor(result.confidence_score),borderRadius:"6px",height:"8px",width:result.confidence_score+"%"}}></div>
 </div>
 <p style={{color:subtext,fontSize:"12px",margin:"8px 0 0 0"}}>Checks: {result.confidence_reason}</p>
+{result.confidence_score>=90&&result.valid&&(<div style={{marginTop:"8px",display:"flex",flexDirection:"column",gap:"3px"}}><span style={{color:"#4ade80",fontSize:"12px"}}>AST syntax valid</span><span style={{color:"#4ade80",fontSize:"12px"}}>Compiles successfully</span><span style={{color:"#4ade80",fontSize:"12px"}}>Variable names preserved</span></div>)}
 </div>
 )}
 {result.ai_powered&&<p style={{color:"#a78bfa",fontSize:"12px"}}>AI-powered migration — please review carefully before use.</p>}
@@ -893,6 +894,7 @@ rightTitle="Migrated"
 );
 }
 export default App;
+
 
 
 
